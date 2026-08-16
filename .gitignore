@@ -38,5 +38,8 @@ next-env.d.ts
 /prisma/dev.db
 /prisma/dev.db-journal
 
+# backups
+/backups/
+
 # user-uploaded photos
 /public/uploads/

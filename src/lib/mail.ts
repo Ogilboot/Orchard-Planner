@@ -1,3 +1,5 @@
+import { logger } from "./logger";
+
 type MailOptions = {
   to: string;
   subject: string;
@@ -8,10 +10,13 @@ type MailOptions = {
 export async function sendEmail(opts: MailOptions): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM;
-  if (!apiKey || !from) return;
+  if (!apiKey || !from) {
+    logger.debug({ to: opts.to, subject: opts.subject }, "email skipped (not configured)");
+    return;
+  }
 
   try {
-    await fetch("https://api.resend.com/emails", {
+    const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -24,7 +29,12 @@ export async function sendEmail(opts: MailOptions): Promise<void> {
         text: opts.text,
       }),
     });
-  } catch {
-    // ignore email failures — never block the primary action
+    if (!res.ok) {
+      logger.warn({ to: opts.to, status: res.status }, "email send failed");
+    } else {
+      logger.info({ to: opts.to, subject: opts.subject }, "email sent");
+    }
+  } catch (err) {
+    logger.error({ err, to: opts.to }, "email send threw");
   }
 }

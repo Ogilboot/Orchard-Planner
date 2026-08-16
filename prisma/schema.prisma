@@ -391,3 +391,14 @@ model Report {
   @@index([status])
 }
 
+model ErrorEvent {
+  id        String   @id @default(cuid())
+  message   String
+  stack     String?
+  source    String   @default("client")
+  path      String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+

@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "./db";
 import { checkRateLimit, resetRateLimit } from "./rate-limit";
+import { logger } from "./logger";
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
@@ -20,7 +21,10 @@ export const authOptions: NextAuthOptions = {
         const email = credentials.email.toLowerCase();
 
         const limited = checkRateLimit(`login:${email}`, 10, 15 * 60 * 1000);
-        if (!limited.ok) return null;
+        if (!limited.ok) {
+          logger.warn({ email }, "login rate limited");
+          return null;
+        }
 
         const user = await db.user.findUnique({
           where: { email },

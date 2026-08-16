@@ -1,0 +1,20 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "file:/app/prisma/dev.db"
+      NEXTAUTH_SECRET: "replace-with-a-32-character-random-string"
+      NEXTAUTH_URL: "http://localhost:3000"
+      SEED_ON_START: "false"
+    volumes:
+      - data:/app/prisma
+      - uploads:/app/public/uploads
+      - backups:/app/backups
+    restart: unless-stopped
+
+volumes:
+  data:
+  uploads:
+  backups:

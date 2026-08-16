@@ -56,6 +56,7 @@ The app is available at <http://localhost:3000>.
 | `npm run db:migrate:dev` | Create/apply migrations in development     |
 | `npm run db:seed`      | Reset and reseed the demo database           |
 | `npm run db:generate`  | Regenerate the Prisma client                 |
+| `npm run backup`       | Back up the SQLite database to `backups/`    |
 
 ## Configuration
 
@@ -81,6 +82,32 @@ Environment variables (see `.env.example`):
 SQLite is a single-file database, so the whole app runs on one host. Back up the
 database file (`prisma/dev.db`) regularly. A health-check endpoint is available at
 `/api/health`.
+
+> **Note on migrations:** the app uses SQLite FTS5 virtual tables created at runtime
+> (outside Prisma). Use `npm run db:migrate` (`prisma migrate deploy`) to apply
+> migrations, rather than `prisma migrate dev`, which will report drift from those
+> tables.
+
+### Docker
+
+A `Dockerfile` and `docker-compose.yml` are provided:
+
+```bash
+docker compose up --build
+```
+
+The container runs migrations on startup (and seeds if `SEED_ON_START=true`). The
+SQLite database, uploads and backups are persisted in named volumes. Set a real
+`NEXTAUTH_SECRET` before exposing it publicly.
+
+## Backups & observability
+
+- `npm run backup` (or `scripts/backup.mjs`) copies the database to `backups/`,
+  keeping the 10 most recent. Schedule it with cron for automated backups.
+- The admin **System** panel (`/admin/system`) shows runtime info, database size and
+  recorded errors, and offers a one-click database download.
+- Errors are logged with [pino](https://getpino.io) (JSON logs, `LOG_LEVEL` env var);
+  client-side errors are reported to `/api/log` and surfaced in the System panel.
 
 ## Testing
 

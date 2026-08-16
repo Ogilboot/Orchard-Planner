@@ -84,6 +84,12 @@ export default async function AdminPage({
           >
             Analytics
           </Link>
+          <Link
+            href="/admin/system"
+            className="rounded-md border border-gray-300 px-3 py-1.5 text-gray-700"
+          >
+            System
+          </Link>
           <form action={rebuildSearchIndex}>
             <button className="rounded-md border border-gray-300 px-3 py-1.5 text-gray-700">
               Rebuild search index
