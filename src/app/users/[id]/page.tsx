@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { getCurrentUser } from "@/lib/get-user";
+import { followUser, unfollowUser } from "@/lib/actions/follow";
+import { reportReview } from "@/lib/actions/reports";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +13,7 @@ export default async function UserProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const viewer = await getCurrentUser();
 
   const user = await db.user.findUnique({
     where: { id },
@@ -24,10 +28,23 @@ export default async function UserProfilePage({
         include: { reviewer: true },
         orderBy: { createdAt: "desc" },
       },
+      _count: { select: { followers: true, following: true } },
     },
   });
 
   if (!user) notFound();
+
+  const [completedSales, isFollowing] = await Promise.all([
+    db.transaction.count({ where: { sellerId: user.id, status: "COMPLETED" } }),
+    viewer && viewer.id !== user.id
+      ? db.follow.findUnique({
+          where: {
+            followerId_followingId: { followerId: viewer.id, followingId: user.id },
+          },
+          select: { id: true },
+        })
+      : null,
+  ]);
 
   const avg =
     user.reviewsReceived.length > 0
@@ -50,6 +67,9 @@ export default async function UserProfilePage({
             {user.yearsActive != null && (
               <p className="text-sm text-gray-500">{user.yearsActive} years active</p>
             )}
+            <p className="text-sm text-gray-500">
+              Member since {user.createdAt.toLocaleDateString()}
+            </p>
           </div>
           <div className="text-right">
             <div className="text-2xl font-semibold">
@@ -61,6 +81,33 @@ export default async function UserProfilePage({
               {user.reviewsReceived.length === 1 ? "" : "s"}
             </div>
           </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-gray-600">
+          <span>
+            <span className="font-semibold">{completedSales}</span> sales
+          </span>
+          <span>
+            <span className="font-semibold">{user._count.followers}</span> follower
+            {user._count.followers === 1 ? "" : "s"}
+          </span>
+          <span>
+            <span className="font-semibold">{user._count.following}</span> following
+          </span>
+          {viewer && viewer.id !== user.id && (
+            <form action={isFollowing ? unfollowUser : followUser}>
+              <input type="hidden" name="followingId" value={user.id} />
+              <button
+                className={`rounded-md px-3 py-1.5 text-sm ${
+                  isFollowing
+                    ? "border border-gray-300 text-gray-700"
+                    : "bg-green-800 text-white"
+                }`}
+              >
+                {isFollowing ? "Following ✓" : "Follow"}
+              </button>
+            </form>
+          )}
         </div>
         {user.bio && <p className="mt-3 text-sm text-gray-600">{user.bio}</p>}
       </section>
@@ -82,7 +129,7 @@ export default async function UserProfilePage({
                     />
                   )}
                   <Link
-                    href={`/varieties/${l.varietyId}`}
+                    href={`/listings/${l.id}`}
                     className="font-medium text-green-800 hover:underline"
                   >
                     {l.variety.commonName}
@@ -114,6 +161,14 @@ export default async function UserProfilePage({
                   <span className="text-amber-600">{"★".repeat(r.rating)}</span>
                 </div>
                 {r.comment && <p className="mt-1 text-gray-600">{r.comment}</p>}
+                {viewer && viewer.id !== r.reviewerId && (
+                  <form action={reportReview} className="mt-2">
+                    <input type="hidden" name="reviewId" value={r.id} />
+                    <button className="text-xs text-gray-400 hover:text-red-600">
+                      Report
+                    </button>
+                  </form>
+                )}
               </li>
             ))}
           </ul>

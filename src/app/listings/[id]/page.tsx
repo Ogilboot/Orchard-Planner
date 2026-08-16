@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/get-user";
 import { sendMessage } from "@/lib/actions/messages";
 import { requestTransaction } from "@/lib/actions/transactions";
+import { reportListing } from "@/lib/actions/reports";
 
 export const dynamic = "force-dynamic";
 
@@ -100,6 +101,16 @@ export default async function ListingDetailPage({
                 </div>
               </div>
             </div>
+            {listing.postagePence != null && (
+              <p className="mt-3 text-sm text-gray-600">
+                Postage: £{(listing.postagePence / 100).toFixed(2)}
+              </p>
+            )}
+            {listing.shippingNotes && (
+              <p className="mt-1 text-sm text-gray-600">
+                Shipping: {listing.shippingNotes}
+              </p>
+            )}
             {listing.description && (
               <p className="mt-3 text-sm text-gray-600">{listing.description}</p>
             )}
@@ -196,6 +207,15 @@ export default async function ListingDetailPage({
           >
             View all listings for {listing.variety.commonName} →
           </Link>
+
+          {user && !isOwner && (
+            <form action={reportListing} className="mt-3">
+              <input type="hidden" name="listingId" value={listing.id} />
+              <button className="text-xs text-gray-400 hover:text-red-600">
+                Report this listing
+              </button>
+            </form>
+          )}
         </div>
       </div>
 

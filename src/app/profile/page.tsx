@@ -71,6 +71,20 @@ export default async function ProfilePage({
         </div>
 
         <div>
+          <label className="block text-sm font-medium">USDA hardiness zone</label>
+          <input
+            type="text"
+            name="hardinessZone"
+            defaultValue={user.hardinessZone ?? ""}
+            placeholder="e.g. 8"
+            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Used to highlight varieties that suit your climate.
+          </p>
+        </div>
+
+        <div>
           <label className="block text-sm font-medium">Years active</label>
           <input
             type="number"

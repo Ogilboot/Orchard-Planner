@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/get-user";
-import { setTransactionStatus, createReview } from "@/lib/actions/transactions";
+import {
+  createReview,
+  setTransactionStatus,
+  shipTransaction,
+  updateShippingAddress,
+} from "@/lib/actions/transactions";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +45,8 @@ export default async function TransactionsPage() {
     orderBy: { createdAt: "desc" },
   });
 
+  const stripeEnabled = Boolean(process.env.STRIPE_SECRET_KEY);
+
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">Transactions</h1>
@@ -52,11 +59,17 @@ export default async function TransactionsPage() {
         <ul className="space-y-3">
           {transactions.map((tx) => {
             const amBuyer = tx.buyerId === user.id;
+            const amSeller = tx.sellerId === user.id;
             const other = amBuyer ? tx.seller : tx.buyer;
             const myReview = tx.reviews.find((r) => r.reviewerId === user.id);
             const canCancel =
-              (tx.status === "PROPOSED" || tx.status === "ACCEPTED") &&
-              (amBuyer || tx.sellerId === user.id);
+              (tx.status === "PROPOSED" || tx.status === "ACCEPTED" || tx.status === "SHIPPED") &&
+              (amBuyer || amSeller);
+            const canPay =
+              stripeEnabled &&
+              amBuyer &&
+              tx.amountPence != null &&
+              tx.status === "ACCEPTED";
 
             return (
               <li key={tx.id} className="rounded-lg border border-gray-200 bg-white p-4">
@@ -85,6 +98,12 @@ export default async function TransactionsPage() {
                       {tx.amountPence != null
                         ? `£${(tx.amountPence / 100).toFixed(2)}`
                         : "Trade"}
+                      {tx.postagePence != null && (
+                        <span className="text-xs font-normal text-gray-500">
+                          {" "}
+                          + £{(tx.postagePence / 100).toFixed(2)} postage
+                        </span>
+                      )}
                     </div>
                     <span
                       className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -100,8 +119,14 @@ export default async function TransactionsPage() {
                   </div>
                 </div>
 
+                {tx.trackingNumber && (
+                  <p className="mt-2 text-sm text-gray-600">
+                    Tracking: <span className="font-mono">{tx.trackingNumber}</span>
+                  </p>
+                )}
+
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  {tx.status === "PROPOSED" && tx.sellerId === user.id && (
+                  {tx.status === "PROPOSED" && amSeller && (
                     <>
                       <form action={setTransactionStatus}>
                         <input type="hidden" name="id" value={tx.id} />
@@ -119,15 +144,53 @@ export default async function TransactionsPage() {
                       </form>
                     </>
                   )}
-                  {tx.status === "ACCEPTED" && tx.sellerId === user.id && (
+
+                  {amSeller && (tx.status === "ACCEPTED" || tx.status === "PAID") && (
+                    <>
+                      <form
+                        action={shipTransaction}
+                        className="flex flex-wrap items-center gap-2"
+                      >
+                        <input type="hidden" name="id" value={tx.id} />
+                        <input
+                          type="text"
+                          name="trackingNumber"
+                          placeholder="Tracking number (optional)"
+                          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm"
+                        />
+                        <button className="rounded-md bg-green-800 px-3 py-1.5 text-sm text-white">
+                          Mark shipped
+                        </button>
+                      </form>
+                      <form action={setTransactionStatus}>
+                        <input type="hidden" name="id" value={tx.id} />
+                        <input type="hidden" name="status" value="COMPLETED" />
+                        <button className="rounded-md border border-gray-300 px-3 py-1.5 text-sm">
+                          Mark complete
+                        </button>
+                      </form>
+                    </>
+                  )}
+
+                  {tx.status === "SHIPPED" && amBuyer && (
                     <form action={setTransactionStatus}>
                       <input type="hidden" name="id" value={tx.id} />
                       <input type="hidden" name="status" value="COMPLETED" />
                       <button className="rounded-md bg-green-800 px-3 py-1.5 text-sm text-white">
-                        Mark complete
+                        Mark received
                       </button>
                     </form>
                   )}
+
+                  {canPay && (
+                    <form method="POST" action="/api/stripe/checkout">
+                      <input type="hidden" name="transactionId" value={tx.id} />
+                      <button className="rounded-md bg-blue-700 px-3 py-1.5 text-sm text-white">
+                        Pay with card
+                      </button>
+                    </form>
+                  )}
+
                   {canCancel && (
                     <form action={setTransactionStatus}>
                       <input type="hidden" name="id" value={tx.id} />
@@ -137,10 +200,11 @@ export default async function TransactionsPage() {
                       </button>
                     </form>
                   )}
+
                   {tx.status === "COMPLETED" && !myReview && (
                     <form
                       action={createReview}
-                      className="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3"
+                      className="flex w-full flex-wrap items-center gap-2 border-t border-gray-100 pt-3"
                     >
                       <input type="hidden" name="transactionId" value={tx.id} />
                       <select
@@ -170,6 +234,25 @@ export default async function TransactionsPage() {
                     <p className="text-sm text-gray-500">Review left ✓</p>
                   )}
                 </div>
+
+                {amBuyer && tx.status !== "COMPLETED" && tx.status !== "CANCELLED" && (
+                  <form
+                    action={updateShippingAddress}
+                    className="mt-3 flex gap-2 border-t border-gray-100 pt-3"
+                  >
+                    <input type="hidden" name="id" value={tx.id} />
+                    <input
+                      type="text"
+                      name="shippingAddress"
+                      defaultValue={tx.shippingAddress ?? ""}
+                      placeholder="Delivery address…"
+                      className="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm"
+                    />
+                    <button className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700">
+                      Save address
+                    </button>
+                  </form>
+                )}
               </li>
             );
           })}

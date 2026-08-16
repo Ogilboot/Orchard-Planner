@@ -20,9 +20,10 @@ export async function createRecord(formData: FormData): Promise<void> {
 
   const varietyId = s(formData.get("varietyId")) || null;
   const rootstock = s(formData.get("rootstock")) || null;
+  const rootstockId = s(formData.get("rootstockId")) || null;
   const status = (s(formData.get("status")) || "PERSONAL") as PlantStatus;
 
-  if (!varietyId && !rootstock) {
+  if (!varietyId && !rootstock && !rootstockId) {
     redirect("/records/new?error=" + encodeURIComponent("Choose a variety or enter a rootstock."));
   }
 
@@ -31,6 +32,7 @@ export async function createRecord(formData: FormData): Promise<void> {
       userId: session.user.id,
       varietyId,
       rootstock,
+      rootstockId,
       rootstockSource: s(formData.get("rootstockSource")) || null,
       scionSource: s(formData.get("scionSource")) || null,
       sourceListingId: s(formData.get("sourceListingId")) || null,
@@ -54,9 +56,10 @@ export async function updateRecord(formData: FormData): Promise<void> {
 
   const varietyId = s(formData.get("varietyId")) || null;
   const rootstock = s(formData.get("rootstock")) || null;
+  const rootstockId = s(formData.get("rootstockId")) || null;
   const status = (s(formData.get("status")) || "PERSONAL") as PlantStatus;
 
-  if (!varietyId && !rootstock) {
+  if (!varietyId && !rootstock && !rootstockId) {
     redirect(`/records/${id}/edit?error=${encodeURIComponent("Choose a variety or enter a rootstock.")}`);
   }
 
@@ -65,6 +68,7 @@ export async function updateRecord(formData: FormData): Promise<void> {
     data: {
       varietyId,
       rootstock,
+      rootstockId,
       rootstockSource: s(formData.get("rootstockSource")) || null,
       scionSource: s(formData.get("scionSource")) || null,
       sourceListingId: s(formData.get("sourceListingId")) || null,

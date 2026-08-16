@@ -30,6 +30,34 @@ export default async function VarietyDetailPage({
 
   const user = await getCurrentUser();
 
+  let pollinators: { id: string; commonName: string; pollinationGroup: string | null }[] = [];
+  if (variety.species && variety.pollinationGroup) {
+    const group = Number(variety.pollinationGroup);
+    const compatibleGroups = Number.isFinite(group)
+      ? new Set([group - 1, group, group + 1].filter((n) => n >= 0).map(String))
+      : new Set<string>();
+    pollinators = await db.variety.findMany({
+      where: {
+        species: variety.species,
+        id: { not: variety.id },
+        pollinationGroup: { not: null },
+      },
+      select: { id: true, commonName: true, pollinationGroup: true },
+      orderBy: { commonName: "asc" },
+      take: 12,
+    });
+    if (compatibleGroups.size > 0) {
+      pollinators = pollinators.filter((p) =>
+        compatibleGroups.has(p.pollinationGroup ?? ""),
+      );
+    }
+  }
+
+  const zoneMatches =
+    user?.hardinessZone != null &&
+    variety.hardinessZone != null &&
+    variety.hardinessZone.includes(user.hardinessZone);
+
   const facts: [string, string][] = [
     ["Chill hours", variety.chillHours?.toString() ?? "—"],
     ["Hardiness zone", variety.hardinessZone ?? "—"],
@@ -49,6 +77,26 @@ export default async function VarietyDetailPage({
           <p className="mt-1 text-sm text-gray-500">
             Synonyms: {variety.synonyms.map((s) => s.name).join(", ")}
           </p>
+        )}
+        {zoneMatches && (
+          <span className="mt-2 inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+            Suits your zone ({user!.hardinessZone})
+          </span>
+        )}
+        {variety.selfFertile != null && (
+          <span className="mt-2 ml-2 inline-block rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+            {variety.selfFertile ? "Self-fertile" : "Needs a pollinator"}
+          </span>
+        )}
+        {variety.triploid != null && variety.triploid && (
+          <span className="mt-2 ml-2 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+            Triploid
+          </span>
+        )}
+        {variety.heritage && (
+          <span className="mt-2 ml-2 inline-block rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800">
+            Heritage
+          </span>
         )}
       </div>
 
@@ -81,6 +129,30 @@ export default async function VarietyDetailPage({
               <span className="font-semibold">Origin:</span> {variety.originNotes}
             </p>
           )}
+        </section>
+      )}
+
+      {pollinators.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-xl font-semibold">
+            Pollination partners{user?.hardinessZone ? "" : ""}
+          </h2>
+          <p className="text-sm text-gray-500">
+            Varieties of {variety.species} in a compatible flowering group.
+          </p>
+          <ul className="flex flex-wrap gap-2">
+            {pollinators.map((p) => (
+              <li key={p.id}>
+                <Link
+                  href={`/varieties/${p.id}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm hover:border-green-300"
+                >
+                  {p.commonName}
+                  <span className="text-xs text-gray-400">group {p.pollinationGroup}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 

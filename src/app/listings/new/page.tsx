@@ -118,6 +118,28 @@ export default async function NewListingPage({
         </div>
 
         <div>
+          <label className="block text-sm font-medium">Postage (£, optional)</label>
+          <input
+            type="number"
+            name="postage"
+            min={0}
+            step="0.01"
+            placeholder="e.g. 3.50"
+            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">Shipping notes (optional)</label>
+          <input
+            type="text"
+            name="shippingNotes"
+            placeholder="e.g. Sent first class in damp moss"
+            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
+          />
+        </div>
+
+        <div>
           <label className="block text-sm font-medium">Location</label>
           <input
             type="text"

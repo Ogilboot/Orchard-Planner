@@ -64,9 +64,11 @@ function newId() {
 }
 
 export default function OrchardEditor({
+  plotId,
   initialElements,
   varieties,
 }: {
+  plotId: string;
   initialElements: PlotElementData[];
   varieties: { id: string; commonName: string }[];
 }) {
@@ -87,6 +89,27 @@ export default function OrchardEditor({
     () => new Map(varieties.map((v) => [v.id, v.commonName])),
     [varieties],
   );
+
+  const overlaps = useMemo(() => {
+    const plants = elements.filter((e) => e.type === "TREE" || e.type === "SHRUB");
+    const results: string[] = [];
+    for (let i = 0; i < plants.length; i++) {
+      for (let j = i + 1; j < plants.length; j++) {
+        const a = plants[i];
+        const b = plants[j];
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const minGap = (Math.max(a.width, a.height) + Math.max(b.width, b.height)) / 2;
+        if (dist < minGap && dist > 0.001) {
+          const labelA = a.label || (a.varietyId ? varietyMap.get(a.varietyId) : null) || a.type;
+          const labelB = b.label || (b.varietyId ? varietyMap.get(b.varietyId) : null) || b.type;
+          results.push(`${labelA} & ${labelB} are ${dist.toFixed(1)}m apart`);
+        }
+      }
+    }
+    return results;
+  }, [elements, varietyMap]);
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -257,8 +280,9 @@ export default function OrchardEditor({
       varietyId: el.varietyId || null,
       rootstock: el.rootstock || null,
       color: el.color || null,
+      plantRecordId: el.plantRecordId || null,
     }));
-    const res = await savePlot(JSON.stringify(payload));
+    const res = await savePlot(plotId, JSON.stringify(payload));
     if (res.ok) {
       setSaveState("saved");
     } else {
@@ -298,6 +322,13 @@ export default function OrchardEditor({
         <div className="flex items-center gap-3">
           {statusEl}
           <button
+            type="button"
+            onClick={() => window.print()}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700"
+          >
+            Print
+          </button>
+          <button
             onClick={handleSave}
             disabled={saveState === "saving"}
             className="rounded-lg bg-green-800 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
@@ -306,6 +337,14 @@ export default function OrchardEditor({
           </button>
         </div>
       </div>
+
+      {overlaps.length > 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+          <span className="font-semibold">Spacing check:</span>{" "}
+          {overlaps.slice(0, 3).join(" · ")}
+          {overlaps.length > 3 && ` + ${overlaps.length - 3} more`}
+        </div>
+      )}
 
       <div className="flex gap-4" style={{ height: "70vh" }}>
         <aside className="w-40 shrink-0 space-y-2 overflow-y-auto rounded-lg border border-gray-200 bg-white p-3">

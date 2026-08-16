@@ -25,7 +25,7 @@ export default async function NewRecordPage({
     );
   }
 
-  const [varieties, listings] = await Promise.all([
+  const [varieties, listings, rootstocks] = await Promise.all([
     db.variety.findMany({ orderBy: { commonName: "asc" } }),
     db.listing.findMany({
       where: { userId: { not: user.id }, status: "ACTIVE" },
@@ -33,6 +33,7 @@ export default async function NewRecordPage({
       include: { variety: true, user: true },
       take: 100,
     }),
+    db.rootstock.findMany({ orderBy: { name: "asc" } }),
   ]);
 
   return (
@@ -89,6 +90,22 @@ export default async function NewRecordPage({
               className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
             />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">Rootstock (from database)</label>
+          <select
+            name="rootstockId"
+            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
+          >
+            <option value="">None</option>
+            {rootstocks.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+                {r.vigour ? ` — ${r.vigour}` : ""}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>

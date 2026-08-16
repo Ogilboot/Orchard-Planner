@@ -20,7 +20,8 @@ const transitions: Partial<
   Record<TransactionStatus, Partial<Record<"BUYER" | "SELLER", TransactionStatus[]>>>
 > = {
   PROPOSED: { BUYER: ["CANCELLED"], SELLER: ["ACCEPTED", "CANCELLED"] },
-  ACCEPTED: { BUYER: ["CANCELLED"], SELLER: ["COMPLETED", "CANCELLED"] },
+  ACCEPTED: { BUYER: ["CANCELLED"], SELLER: ["SHIPPED", "COMPLETED", "CANCELLED"] },
+  SHIPPED: { BUYER: ["COMPLETED", "CANCELLED"], SELLER: ["CANCELLED"] },
 };
 
 function s(value: FormDataEntryValue | null): string {
@@ -42,7 +43,7 @@ export async function requestTransaction(formData: FormData): Promise<void> {
     where: {
       listingId,
       buyerId: session.user.id,
-      status: { in: ["PROPOSED", "ACCEPTED"] },
+      status: { in: ["PROPOSED", "ACCEPTED", "PAID", "SHIPPED"] },
     },
   });
   if (existing) redirect("/transactions");
@@ -54,6 +55,7 @@ export async function requestTransaction(formData: FormData): Promise<void> {
       sellerId: listing.userId,
       status: "PROPOSED",
       amountPence: listing.pricePence,
+      postagePence: listing.postagePence,
     },
   });
 
@@ -85,25 +87,83 @@ export async function setTransactionStatus(formData: FormData): Promise<void> {
   await db.transaction.update({ where: { id }, data: { status } });
 
   if (status === "COMPLETED") {
-    await db.listing.update({
-      where: { id: tx.listingId },
-      data: { status: "SOLD" },
-    });
+    const listing = await db.listing.findUnique({ where: { id: tx.listingId } });
+    if (listing) {
+      const remaining = Math.max(0, listing.quantity - 1);
+      await db.listing.update({
+        where: { id: tx.listingId },
+        data: { quantity: remaining, status: remaining === 0 ? "EXPIRED" : listing.status },
+      });
+    }
   }
 
-  if (status === "ACCEPTED" || status === "COMPLETED") {
+  const message =
+    status === "ACCEPTED"
+      ? "Your transaction request was accepted."
+      : status === "SHIPPED"
+        ? "Your order has been shipped."
+        : status === "COMPLETED"
+          ? "Your transaction was marked as completed."
+          : null;
+
+  if (message) {
     await db.notification.create({
       data: {
-        userId: tx.buyerId,
+        userId: role === "SELLER" ? tx.buyerId : tx.sellerId,
         type: "TRANSACTION",
-        message:
-          status === "ACCEPTED"
-            ? "Your transaction request was accepted."
-            : "Your transaction was marked as completed.",
+        message,
         listingId: tx.listingId,
       },
     });
   }
+
+  revalidatePath("/transactions");
+  revalidatePath("/listings");
+  redirect("/transactions");
+}
+
+export async function shipTransaction(formData: FormData): Promise<void> {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) redirect("/login");
+
+  const id = s(formData.get("id"));
+  const trackingNumber = s(formData.get("trackingNumber")) || null;
+  if (!id) redirect("/transactions");
+
+  const tx = await db.transaction.findUnique({ where: { id } });
+  if (!tx || tx.sellerId !== session.user.id) redirect("/transactions");
+  if (tx.status !== "ACCEPTED" && tx.status !== "PAID") redirect("/transactions");
+
+  await db.transaction.update({
+    where: { id },
+    data: { status: "SHIPPED", trackingNumber },
+  });
+
+  await db.notification.create({
+    data: {
+      userId: tx.buyerId,
+      type: "TRANSACTION",
+      message: "Your order has been shipped.",
+      listingId: tx.listingId,
+    },
+  });
+
+  revalidatePath("/transactions");
+  redirect("/transactions");
+}
+
+export async function updateShippingAddress(formData: FormData): Promise<void> {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) redirect("/login");
+
+  const id = s(formData.get("id"));
+  const shippingAddress = s(formData.get("shippingAddress")) || null;
+  if (!id) redirect("/transactions");
+
+  const tx = await db.transaction.findUnique({ where: { id } });
+  if (!tx || tx.buyerId !== session.user.id) redirect("/transactions");
+
+  await db.transaction.update({ where: { id }, data: { shippingAddress } });
 
   revalidatePath("/transactions");
   redirect("/transactions");
@@ -140,6 +200,15 @@ export async function createReview(formData: FormData): Promise<void> {
 
   await db.review.create({
     data: { transactionId, reviewerId, revieweeId, rating, comment: comment || null },
+  });
+
+  await db.notification.create({
+    data: {
+      userId: revieweeId,
+      type: "REVIEW_RECEIVED",
+      message: "You received a new review.",
+      listingId: tx.listingId,
+    },
   });
 
   revalidatePath("/transactions");

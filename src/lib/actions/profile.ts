@@ -11,6 +11,7 @@ import { db } from "@/lib/db";
 const schema = z.object({
   name: z.string().trim().min(1).max(100),
   location: z.string().trim().max(200).optional(),
+  hardinessZone: z.string().trim().max(20).optional(),
   bio: z.string().trim().max(1000).optional(),
   yearsActive: z.coerce.number().int().min(0).max(200).optional(),
 });
@@ -23,6 +24,7 @@ export async function updateProfile(formData: FormData): Promise<void> {
   const parsed = schema.safeParse({
     name: formData.get("name"),
     location: formData.get("location") || undefined,
+    hardinessZone: formData.get("hardinessZone") || undefined,
     bio: formData.get("bio") || undefined,
     yearsActive: yearsRaw ? String(yearsRaw) : undefined,
   });
@@ -32,13 +34,14 @@ export async function updateProfile(formData: FormData): Promise<void> {
     redirect(`/profile?error=${encodeURIComponent(message)}`);
   }
 
-  const { name, location, bio, yearsActive } = parsed.data;
+  const { name, location, hardinessZone, bio, yearsActive } = parsed.data;
 
   await db.user.update({
     where: { id: session.user.id },
     data: {
       name,
       location: location || null,
+      hardinessZone: hardinessZone || null,
       bio: bio || null,
       yearsActive: yearsActive ?? null,
     },

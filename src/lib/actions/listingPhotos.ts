@@ -58,3 +58,38 @@ export async function removeListingPhoto(photoId: string): Promise<void> {
   revalidatePath("/listings/mine");
   revalidatePath(`/users/${photo.listing.userId}`);
 }
+
+export async function moveListingPhoto(photoId: string, direction: number): Promise<void> {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return;
+
+  const photo = await db.listingPhoto.findUnique({
+    where: { id: photoId },
+    include: { listing: true },
+  });
+  if (!photo || photo.listing.userId !== session.user.id) return;
+
+  const siblings = await db.listingPhoto.findMany({
+    where: { listingId: photo.listingId },
+    orderBy: { sortOrder: "asc" },
+  });
+
+  const idx = siblings.findIndex((p) => p.id === photoId);
+  const swap = siblings[idx + direction];
+  if (!swap) return;
+
+  await db.listingPhoto.update({
+    where: { id: photoId },
+    data: { sortOrder: swap.sortOrder },
+  });
+  await db.listingPhoto.update({
+    where: { id: swap.id },
+    data: { sortOrder: photo.sortOrder },
+  });
+
+  revalidatePath("/varieties");
+  revalidatePath(`/varieties/${photo.listing.varietyId}`);
+  revalidatePath("/listings");
+  revalidatePath("/listings/mine");
+  revalidatePath(`/users/${photo.listing.userId}`);
+}

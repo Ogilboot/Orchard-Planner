@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Prisma, type MaterialType } from "@prisma/client";
 import { db } from "@/lib/db";
+import { getCurrentUser } from "@/lib/get-user";
+import { saveSearch } from "@/lib/actions/saved-search";
 
 export const dynamic = "force-dynamic";
 
@@ -107,10 +109,32 @@ export default async function ListingsPage({
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const base = { q, type, trade, location, season: params.season ?? "", sort };
+  const user = await getCurrentUser();
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Browse listings</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Browse listings</h1>
+        {user && (
+          <form action={saveSearch} className="flex items-center gap-2 text-sm">
+            <input
+              type="text"
+              name="name"
+              required
+              placeholder="Name this search"
+              className="rounded-md border border-gray-300 px-3 py-1.5"
+            />
+            <input
+              type="hidden"
+              name="query"
+              value={JSON.stringify({ q, type, trade, location, season: params.season ?? "", sort })}
+            />
+            <button className="rounded-md border border-green-800 px-3 py-1.5 text-green-800">
+              Save search
+            </button>
+          </form>
+        )}
+      </div>
 
       <form
         method="GET"

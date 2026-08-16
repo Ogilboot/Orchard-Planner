@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import AuthControls from "@/components/AuthControls";
+import UnreadIndicator from "@/components/UnreadIndicator";
 
 export default async function Header() {
   const session = await getServerSession(authOptions);
@@ -34,6 +35,9 @@ export default async function Header() {
             <Link href="/varieties" className="text-gray-700 hover:text-green-800">
               Varieties
             </Link>
+            <Link href="/rootstocks" className="text-gray-700 hover:text-green-800">
+              Rootstocks
+            </Link>
             <Link href="/listings" className="text-gray-700 hover:text-green-800">
               Browse
             </Link>
@@ -57,13 +61,18 @@ export default async function Header() {
             <Link href="/wantlist" className="text-gray-700 hover:text-green-800">
               Want list
             </Link>
+            {user && (
+              <Link href="/saved-searches" className="text-gray-700 hover:text-green-800">
+                Saved searches
+              </Link>
+            )}
+            {user && (
+              <Link href="/following" className="text-gray-700 hover:text-green-800">
+                Following
+              </Link>
+            )}
             <Link href="/messages" className="text-gray-700 hover:text-green-800">
               Messages
-              {unreadMessages > 0 && (
-                <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-xs text-white">
-                  {unreadMessages}
-                </span>
-              )}
             </Link>
             {user && (
               <Link href="/profile" className="text-gray-700 hover:text-green-800">
@@ -78,18 +87,10 @@ export default async function Header() {
           </nav>
         </div>
         <div className="flex items-center gap-4 text-sm">
-          <Link
-            href="/notifications"
-            className="text-gray-700 hover:text-green-800"
-            aria-label="Notifications"
-          >
-            Notifications
-            {unread > 0 && (
-              <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs text-white">
-                {unread}
-              </span>
-            )}
-          </Link>
+          <UnreadIndicator
+            initialNotifications={unread}
+            initialMessages={unreadMessages}
+          />
           <AuthControls
             user={user ? { id: user.id, name: user.name, email: user.email } : null}
           />

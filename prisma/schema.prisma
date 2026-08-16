@@ -19,6 +19,7 @@ model User {
   passwordHash      String?
   location          String?
   bio               String?
+  hardinessZone     String?
   isVerifiedNursery Boolean       @default(false)
   yearsActive       Int?
   role              Role          @default(USER)
@@ -27,7 +28,7 @@ model User {
 
   listings          Listing[]
   wantListEntries   WantListEntry[]
-  plot              Plot?
+  plots             Plot[]
   buyerTransactions Transaction[] @relation("BuyerTransactions")
   sellerTransactions Transaction[] @relation("SellerTransactions")
   reviewsGiven      Review[]      @relation("ReviewsGiven")
@@ -36,6 +37,10 @@ model User {
   messagesReceived  Message[]     @relation("ReceivedMessages")
   notifications     Notification[]
   plantRecords      PlantRecord[]
+  following         Follow[]      @relation("Following")
+  followers         Follow[]      @relation("Follower")
+  savedSearches     SavedSearch[]
+  reportsMade       Report[]
 }
 
 model Variety {
@@ -49,6 +54,10 @@ model Variety {
   flavorNotes            String?
   diseaseResistanceNotes String?
   originNotes            String?
+  selfFertile            Boolean?
+  triploid               Boolean?
+  diseaseRating          Int?
+  heritage               Boolean         @default(false)
   createdAt              DateTime        @default(now())
   updatedAt              DateTime        @updatedAt
 
@@ -59,6 +68,23 @@ model Variety {
   plantRecords           PlantRecord[]
 
   @@index([commonName])
+}
+
+model Rootstock {
+  id                     String        @id @default(cuid())
+  name                   String        @unique
+  species                String?
+  vigour                 String?
+  dwarfingClass          String?
+  chillHours             Int?
+  soilNotes              String?
+  diseaseResistanceNotes String?
+  createdAt              DateTime      @default(now())
+
+  listings     Listing[]
+  plantRecords PlantRecord[]
+
+  @@index([name])
 }
 
 model Synonym {
@@ -93,22 +119,27 @@ model Listing {
   type              MaterialType
   quantity          Int           @default(1)
   pricePence        Int?
+  postagePence      Int?
   tradeOnly         Boolean       @default(false)
   availabilityStart DateTime?
   availabilityEnd   DateTime?
   location          String?
   description       String?
+  shippingNotes     String?
+  rootstockId       String?
   status            ListingStatus @default(ACTIVE)
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   variety      Variety       @relation(fields: [varietyId], references: [id], onDelete: Cascade)
+  rootstock    Rootstock?    @relation(fields: [rootstockId], references: [id], onDelete: SetNull)
   photos       ListingPhoto[]
   transactions Transaction[]
   messages     Message[]
   notifications Notification[]
   sourcedPlantRecords PlantRecord[] @relation("SourcedPlantRecords")
+  reports      Report[]
 
   @@index([varietyId])
   @@index([userId])
@@ -154,6 +185,9 @@ model Transaction {
   sellerId  String
   status    TransactionStatus @default(PROPOSED)
   amountPence Int?
+  postagePence Int?
+  shippingAddress String?
+  trackingNumber String?
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
 
@@ -176,6 +210,7 @@ model Review {
   transaction Transaction @relation(fields: [transactionId], references: [id])
   reviewer    User        @relation("ReviewsGiven", fields: [reviewerId], references: [id])
   reviewee    User        @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+  reports     Report[]
 
   @@unique([transactionId, reviewerId])
 }
@@ -198,13 +233,15 @@ model Message {
 
 model Plot {
   id        String        @id @default(cuid())
-  userId    String        @unique
+  userId    String
   name      String        @default("My orchard")
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
   user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   elements PlotElement[]
+
+  @@index([userId])
 }
 
 enum PlotElementType {
@@ -231,10 +268,12 @@ model PlotElement {
   varietyId String?
   rootstock String?
   color     String?
+  plantRecordId String?
   createdAt DateTime        @default(now())
 
   plot    Plot    @relation(fields: [plotId], references: [id], onDelete: Cascade)
   variety Variety? @relation(fields: [varietyId], references: [id], onDelete: SetNull)
+  plantRecord PlantRecord? @relation(fields: [plantRecordId], references: [id], onDelete: SetNull)
 
   @@index([plotId])
 }
@@ -271,6 +310,7 @@ model PlantRecord {
   userId          String
   varietyId       String?
   rootstock       String?
+  rootstockId     String?
   rootstockSource String?
   scionSource     String?
   sourceListingId String?
@@ -283,8 +323,10 @@ model PlantRecord {
 
   user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   variety       Variety?   @relation(fields: [varietyId], references: [id], onDelete: SetNull)
+  rootstockRef  Rootstock? @relation(fields: [rootstockId], references: [id], onDelete: SetNull)
   sourceListing Listing?   @relation("SourcedPlantRecords", fields: [sourceListingId], references: [id], onDelete: SetNull)
   plantNotes    PlantNote[]
+  plotElements  PlotElement[]
 
   @@index([userId])
 }
@@ -300,5 +342,52 @@ model PlantNote {
   record PlantRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
 
   @@index([recordId])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("Follower", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+}
+
+model SavedSearch {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  query     String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+model Report {
+  id         String       @id @default(cuid())
+  reporterId String
+  listingId  String?
+  reviewId   String?
+  reason     String
+  status     ReportStatus @default(OPEN)
+  createdAt  DateTime     @default(now())
+
+  reporter User     @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  listing  Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  review   Review?  @relation(fields: [reviewId], references: [id], onDelete: SetNull)
+
+  @@index([status])
 }
 

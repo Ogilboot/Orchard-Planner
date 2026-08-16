@@ -43,12 +43,20 @@ export default async function RecordsPage() {
             Track your own trees and stock — rootstock, scion source, graft date and notes.
           </p>
         </div>
-        <Link
-          href="/records/new"
-          className="rounded-lg bg-green-800 px-4 py-2 text-sm font-medium text-white"
-        >
-          New record
-        </Link>
+        <div className="flex gap-2">
+          <a
+            href="/api/export/records"
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700"
+          >
+            Export CSV
+          </a>
+          <Link
+            href="/records/new"
+            className="rounded-lg bg-green-800 px-4 py-2 text-sm font-medium text-white"
+          >
+            New record
+          </Link>
+        </div>
       </div>
 
       {records.length === 0 ? (

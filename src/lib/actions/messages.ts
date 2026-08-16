@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { sendEmail } from "@/lib/mail";
 
 export async function sendMessage(formData: FormData): Promise<void> {
   const session = await getServerSession(authOptions);
@@ -14,7 +15,10 @@ export async function sendMessage(formData: FormData): Promise<void> {
   const body = String(formData.get("body") || "").trim();
   if (!body || !listingId) return;
 
-  const listing = await db.listing.findUnique({ where: { id: listingId } });
+  const listing = await db.listing.findUnique({
+    where: { id: listingId },
+    include: { user: { select: { email: true, name: true } }, variety: true },
+  });
   if (!listing || listing.userId === session.user.id) return;
 
   await db.message.create({
@@ -24,6 +28,21 @@ export async function sendMessage(formData: FormData): Promise<void> {
       listingId: listing.id,
       body,
     },
+  });
+
+  await db.notification.create({
+    data: {
+      userId: listing.userId,
+      type: "MESSAGE",
+      message: `You have a new message about ${listing.variety.commonName}.`,
+      listingId: listing.id,
+    },
+  });
+
+  await sendEmail({
+    to: listing.user.email,
+    subject: `New message about ${listing.variety.commonName}`,
+    text: body,
   });
 
   revalidatePath("/messages");
@@ -46,6 +65,28 @@ export async function sendReply(formData: FormData): Promise<void> {
       body,
     },
   });
+
+  const recipient = await db.user.findUnique({
+    where: { id: recipientId },
+    select: { email: true },
+  });
+
+  await db.notification.create({
+    data: {
+      userId: recipientId,
+      type: "MESSAGE",
+      message: "You have a new message.",
+      listingId,
+    },
+  });
+
+  if (recipient) {
+    await sendEmail({
+      to: recipient.email,
+      subject: "You have a new message on Orchard Planner",
+      text: body,
+    });
+  }
 
   revalidatePath("/messages");
 }

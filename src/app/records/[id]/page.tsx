@@ -42,6 +42,7 @@ export default async function RecordDetailPage({
     where: { id },
     include: {
       variety: true,
+      rootstockRef: true,
       sourceListing: { include: { variety: true } },
       plantNotes: { orderBy: { notedAt: "desc" } },
     },
@@ -50,7 +51,7 @@ export default async function RecordDetailPage({
   if (!record || record.userId !== user.id) notFound();
 
   const facts: [string, string][] = [
-    ["Rootstock", record.rootstock ?? "—"],
+    ["Rootstock", record.rootstockRef?.name ?? record.rootstock ?? "—"],
     ["Rootstock source", record.rootstockSource ?? "—"],
     ["Scion source", record.scionSource ?? "—"],
     ["Graft date", record.graftDate ? record.graftDate.toLocaleDateString() : "—"],

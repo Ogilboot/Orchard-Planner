@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/get-user";
-import { addListingPhoto, removeListingPhoto } from "@/lib/actions/listingPhotos";
+import { addListingPhoto, moveListingPhoto, removeListingPhoto } from "@/lib/actions/listingPhotos";
 import { deleteListing, setListingStatus } from "@/lib/actions/listings";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +31,12 @@ export default async function MyListingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">My listings</h1>
-        <p className="text-sm text-gray-500">Add up to 4 photos per listing.</p>
+        <p className="text-sm text-gray-500">
+          Add up to 4 photos per listing.{" "}
+          <a href="/api/export/listings" className="text-green-700 hover:underline">
+            Export CSV
+          </a>
+        </p>
       </div>
 
       {listings.length === 0 ? (
@@ -113,8 +118,8 @@ export default async function MyListingsPage() {
 
               {l.photos.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {l.photos.map((p) => (
-                    <div key={p.id} className="relative">
+                  {l.photos.map((p, i) => (
+                    <div key={p.id} className="relative flex flex-col gap-1">
                       <img
                         src={p.url}
                         alt=""
@@ -128,6 +133,28 @@ export default async function MyListingsPage() {
                           Remove
                         </button>
                       </form>
+                      {l.photos.length > 1 && (
+                        <div className="flex gap-1">
+                          <form action={moveListingPhoto.bind(null, p.id, -1)}>
+                            <button
+                              disabled={i === 0}
+                              className="rounded border border-gray-300 px-1.5 text-xs disabled:opacity-40"
+                              aria-label="Move left"
+                            >
+                              ←
+                            </button>
+                          </form>
+                          <form action={moveListingPhoto.bind(null, p.id, 1)}>
+                            <button
+                              disabled={i === l.photos.length - 1}
+                              className="rounded border border-gray-300 px-1.5 text-xs disabled:opacity-40"
+                              aria-label="Move right"
+                            >
+                              →
+                            </button>
+                          </form>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

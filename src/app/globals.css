@@ -1,1 +1,11 @@
 @import "tailwindcss";
+
+@media print {
+  header,
+  aside {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+}

@@ -23,4 +23,5 @@ export interface PlotElementData {
   varietyId: string | null;
   rootstock: string | null;
   color: string | null;
+  plantRecordId?: string | null;
 }

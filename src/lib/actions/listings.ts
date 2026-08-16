@@ -24,8 +24,10 @@ const schema = z.object({
   quantity: z.coerce.number().int().min(1),
   tradeOnly: z.boolean(),
   price: z.coerce.number().min(0).optional(),
+  postage: z.coerce.number().min(0).optional(),
   location: z.string().optional(),
   description: z.string().optional(),
+  shippingNotes: z.string().max(500).optional(),
   availabilityStart: z.string().optional(),
   availabilityEnd: z.string().optional(),
 });
@@ -37,6 +39,8 @@ export async function createListing(formData: FormData): Promise<void> {
   const tradeOnly = formData.get("tradeOnly") === "on";
   const priceStr = formData.get("price");
   const price = priceStr ? Number(String(priceStr)) : undefined;
+  const postageStr = formData.get("postage");
+  const postage = postageStr ? Number(String(postageStr)) : undefined;
 
   const parsed = schema.safeParse({
     varietyId: formData.get("varietyId"),
@@ -44,8 +48,10 @@ export async function createListing(formData: FormData): Promise<void> {
     quantity: formData.get("quantity"),
     tradeOnly,
     price,
+    postage,
     location: formData.get("location") || undefined,
     description: formData.get("description") || undefined,
+    shippingNotes: formData.get("shippingNotes") || undefined,
     availabilityStart: formData.get("availabilityStart") || undefined,
     availabilityEnd: formData.get("availabilityEnd") || undefined,
   });
@@ -75,8 +81,10 @@ export async function createListing(formData: FormData): Promise<void> {
       quantity: data.quantity,
       tradeOnly,
       pricePence,
+      postagePence: data.postage === undefined ? null : Math.round(data.postage * 100),
       location: data.location || null,
       description: data.description || null,
+      shippingNotes: data.shippingNotes || null,
       availabilityStart: data.availabilityStart ? new Date(data.availabilityStart) : null,
       availabilityEnd: data.availabilityEnd ? new Date(data.availabilityEnd) : null,
     },
@@ -137,6 +145,8 @@ export async function updateListing(formData: FormData): Promise<void> {
   const tradeOnly = formData.get("tradeOnly") === "on";
   const priceStr = formData.get("price");
   const price = priceStr ? Number(String(priceStr)) : undefined;
+  const postageStr = formData.get("postage");
+  const postage = postageStr ? Number(String(postageStr)) : undefined;
 
   const parsed = schema.safeParse({
     varietyId: formData.get("varietyId"),
@@ -144,8 +154,10 @@ export async function updateListing(formData: FormData): Promise<void> {
     quantity: formData.get("quantity"),
     tradeOnly,
     price,
+    postage,
     location: formData.get("location") || undefined,
     description: formData.get("description") || undefined,
+    shippingNotes: formData.get("shippingNotes") || undefined,
     availabilityStart: formData.get("availabilityStart") || undefined,
     availabilityEnd: formData.get("availabilityEnd") || undefined,
   });
@@ -175,8 +187,10 @@ export async function updateListing(formData: FormData): Promise<void> {
       quantity: data.quantity,
       tradeOnly,
       pricePence,
+      postagePence: data.postage === undefined ? null : Math.round(data.postage * 100),
       location: data.location || null,
       description: data.description || null,
+      shippingNotes: data.shippingNotes || null,
       availabilityStart: data.availabilityStart ? new Date(data.availabilityStart) : null,
       availabilityEnd: data.availabilityEnd ? new Date(data.availabilityEnd) : null,
     },

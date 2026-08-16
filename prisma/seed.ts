@@ -3,7 +3,24 @@ import bcrypt from "bcryptjs";
 
 const db = new PrismaClient();
 
-const varieties = [
+type VarietySeed = {
+  commonName: string;
+  species: string;
+  chillHours: number;
+  hardinessZone: string;
+  pollinationGroup: string;
+  harvestWindow: string;
+  flavorNotes: string;
+  diseaseResistanceNotes: string;
+  originNotes: string;
+  synonyms: string[];
+  selfFertile?: boolean;
+  triploid?: boolean;
+  diseaseRating?: number;
+  heritage?: boolean;
+};
+
+const varieties: VarietySeed[] = [
   {
     commonName: "Ashmead's Kernel",
     species: "Malus domestica",
@@ -17,6 +34,8 @@ const varieties = [
     originNotes:
       "Raised by Dr Ashmead, Gloucester, England, around 1700. A prized heritage variety.",
     synonyms: ["Ashmeads Kernel", "Ashmead's Kernel"],
+    diseaseRating: 2,
+    heritage: true,
   },
   {
     commonName: "Bramley's Seedling",
@@ -30,6 +49,8 @@ const varieties = [
     diseaseResistanceNotes: "Triploid; needs two pollinators but is a poor pollinator itself.",
     originNotes: "Raised from a pip by Matthew Bramley, Southwell, England, 1809.",
     synonyms: ["Bramley"],
+    triploid: true,
+    heritage: true,
   },
   {
     commonName: "Egremont Russet",
@@ -114,6 +135,8 @@ const varieties = [
     diseaseResistanceNotes: "Self-fertile and reliable.",
     originNotes: "Named after Queen Victoria; found in Sussex, England, c.1840.",
     synonyms: [],
+    selfFertile: true,
+    diseaseRating: 5,
   },
   {
     commonName: "Farleigh Damson",
@@ -138,6 +161,7 @@ const varieties = [
     diseaseResistanceNotes: "Good all-round health.",
     originNotes: "Raised in Summerland, Canada, 1968.",
     synonyms: [],
+    selfFertile: true,
   },
   {
     commonName: "Kentish Cob",
@@ -162,6 +186,8 @@ const varieties = [
     diseaseResistanceNotes: "Disease resistant; tolerant of a range of soils.",
     originNotes: "Raised in New Jersey, USA, 1952. One of the most planted cultivars.",
     synonyms: [],
+    selfFertile: true,
+    diseaseRating: 5,
   },
   {
     commonName: "Brown Turkey",
@@ -225,6 +251,21 @@ const varieties = [
   },
 ];
 
+const rootstocks = [
+  { name: "M27", species: "Malus", vigour: "Very dwarfing", dwarfingClass: "Dwarf", chillHours: 800, soilNotes: "Needs fertile soil and staking; good for pots.", diseaseResistanceNotes: "Susceptible to woolly aphid." },
+  { name: "M9", species: "Malus", vigour: "Dwarfing", dwarfingClass: "Dwarf", chillHours: 800, soilNotes: "The most widely planted dwarfing stock.", diseaseResistanceNotes: "Good; some fire blight susceptibility." },
+  { name: "M26", species: "Malus", vigour: "Semi-dwarfing", dwarfingClass: "Semi-dwarf", chillHours: 800, soilNotes: "Reliable; needs staking in early years.", diseaseResistanceNotes: "Good all-round." },
+  { name: "MM106", species: "Malus", vigour: "Semi-vigorous", dwarfingClass: "Semi-dwarf", chillHours: 800, soilNotes: "Tolerant of a wide range of soils, including heavier clay.", diseaseResistanceNotes: "Resistant to woolly aphid." },
+  { name: "MM111", species: "Malus", vigour: "Vigorous", dwarfingClass: "Standard", chillHours: 800, soilNotes: "Good for standards and poor soils.", diseaseResistanceNotes: "Very hardy." },
+  { name: "M25", species: "Malus", vigour: "Very vigorous", dwarfingClass: "Standard", chillHours: 800, soilNotes: "For large traditional standards.", diseaseResistanceNotes: "Hardy; long-lived." },
+  { name: "Quince A", species: "Cydonia", vigour: "Semi-vigorous", dwarfingClass: "Semi-dwarf", chillHours: 700, soilNotes: "The standard pear rootstock.", diseaseResistanceNotes: "Good." },
+  { name: "Quince C", species: "Cydonia", vigour: "Dwarfing", dwarfingClass: "Dwarf", chillHours: 700, soilNotes: "Dwarfing pear stock; needs fertile soil.", diseaseResistanceNotes: "Good." },
+  { name: "St. Julien A", species: "Prunus", vigour: "Semi-vigorous", dwarfingClass: "Semi-dwarf", chillHours: 700, soilNotes: "The standard plum rootstock.", diseaseResistanceNotes: "Good." },
+  { name: "Gisela 5", species: "Prunus", vigour: "Dwarfing", dwarfingClass: "Dwarf", chillHours: 700, soilNotes: "Dwarfing cherry stock; needs good soil and irrigation.", diseaseResistanceNotes: "Good." },
+  { name: "Colt", species: "Prunus", vigour: "Semi-vigorous", dwarfingClass: "Standard", chillHours: 700, soilNotes: "Vigorous cherry stock for poor soils.", diseaseResistanceNotes: "Hardy." },
+  { name: "Hazel (Corylus colurna)", species: "Corylus", vigour: "Standard", dwarfingClass: "Standard", chillHours: 900, soilNotes: "Used as a non-suckering rootstock for filberts.", diseaseResistanceNotes: "Good." },
+];
+
 async function wipe() {
   await db.plantNote.deleteMany();
   await db.plantRecord.deleteMany();
@@ -239,6 +280,10 @@ async function wipe() {
   await db.listing.deleteMany();
   await db.synonym.deleteMany();
   await db.variety.deleteMany();
+  await db.follow.deleteMany();
+  await db.savedSearch.deleteMany();
+  await db.report.deleteMany();
+  await db.rootstock.deleteMany();
   await db.user.deleteMany();
 }
 
@@ -260,6 +305,10 @@ async function main() {
         flavorNotes: v.flavorNotes,
         diseaseResistanceNotes: v.diseaseResistanceNotes,
         originNotes: v.originNotes,
+        selfFertile: v.selfFertile ?? null,
+        triploid: v.triploid ?? null,
+        diseaseRating: v.diseaseRating ?? null,
+        heritage: v.heritage ?? false,
         synonyms: { create: v.synonyms.map((name) => ({ name })) },
       },
     });
@@ -267,6 +316,11 @@ async function main() {
   }
 
   const passwordHash = await bcrypt.hash("password123", 10);
+
+  console.log("Seeding rootstocks…");
+  for (const r of rootstocks) {
+    await db.rootstock.create({ data: r });
+  }
 
   console.log("Seeding users…");
   const demo = await db.user.create({
@@ -433,6 +487,10 @@ async function main() {
     },
   });
 
+  await db.follow.create({
+    data: { followerId: buyer.id, followingId: demo.id },
+  });
+
   await db.plantRecord.create({
     data: {
       userId: demo.id,
@@ -453,10 +511,8 @@ async function main() {
     },
   });
 
-  await db.plot.upsert({
-    where: { userId: demo.id },
-    update: {},
-    create: {
+  await db.plot.create({
+    data: {
       userId: demo.id,
       name: "My orchard",
       elements: {

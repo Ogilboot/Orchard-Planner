@@ -39,7 +39,7 @@ export default async function EditRecordPage({
     );
   }
 
-  const [record, varieties, listings] = await Promise.all([
+  const [record, varieties, listings, rootstocks] = await Promise.all([
     db.plantRecord.findUnique({ where: { id } }),
     db.variety.findMany({ orderBy: { commonName: "asc" } }),
     db.listing.findMany({
@@ -48,6 +48,7 @@ export default async function EditRecordPage({
       include: { variety: true, user: true },
       take: 100,
     }),
+    db.rootstock.findMany({ orderBy: { name: "asc" } }),
   ]);
 
   if (!record || record.userId !== user.id) notFound();
@@ -111,6 +112,23 @@ export default async function EditRecordPage({
               className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
             />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">Rootstock (from database)</label>
+          <select
+            name="rootstockId"
+            defaultValue={record.rootstockId ?? ""}
+            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
+          >
+            <option value="">None</option>
+            {rootstocks.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+                {r.vigour ? ` — ${r.vigour}` : ""}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>
