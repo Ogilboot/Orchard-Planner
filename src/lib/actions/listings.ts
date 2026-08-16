@@ -3,10 +3,12 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { deletePhotoFile, isAcceptedPhoto, MAX_LISTING_PHOTOS, savePhoto } from "@/lib/photo";
+import { checkRateLimit, ipFromHeaders } from "@/lib/rate-limit";
 
 const materialTypes = [
   "SCION_WOOD",
@@ -35,6 +37,11 @@ const schema = z.object({
 export async function createListing(formData: FormData): Promise<void> {
   const session = await getServerSession(authOptions);
   if (!session?.user) redirect("/login");
+
+  const ip = ipFromHeaders(await headers());
+  if (!checkRateLimit(`listing:${ip}`, 10, 60 * 60 * 1000).ok) {
+    redirect("/listings/new?error=" + encodeURIComponent("You're posting too quickly. Try again later."));
+  }
 
   const tradeOnly = formData.get("tradeOnly") === "on";
   const priceStr = formData.get("price");

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAcceptedPhoto, MAX_LISTING_PHOTOS, MAX_PHOTO_BYTES } from "./photo";
+import { detectImageType, isAcceptedPhoto, MAX_LISTING_PHOTOS, MAX_PHOTO_BYTES } from "./photo";
 
 function file(type: string, size: number): File {
   const bytes = new Uint8Array(size);
@@ -29,5 +29,47 @@ describe("isAcceptedPhoto", () => {
   it("exposes the max photo constants", () => {
     expect(MAX_LISTING_PHOTOS).toBe(4);
     expect(MAX_PHOTO_BYTES).toBe(5 * 1024 * 1024);
+  });
+});
+
+describe("detectImageType", () => {
+  it("detects JPEG by magic bytes", () => {
+    expect(detectImageType(Buffer.from([0xff, 0xd8, 0xff, 0xe0]))).toBe("image/jpeg");
+  });
+
+  it("detects PNG by magic bytes", () => {
+    expect(
+      detectImageType(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])),
+    ).toBe("image/png");
+  });
+
+  it("detects GIF by magic bytes", () => {
+    expect(detectImageType(Buffer.from("GIF89a", "latin1"))).toBe("image/gif");
+    expect(detectImageType(Buffer.from("GIF87a", "latin1"))).toBe("image/gif");
+  });
+
+  it("detects WebP by RIFF/WEBP signature", () => {
+    const buf = Buffer.concat([
+      Buffer.from("RIFF", "latin1"),
+      Buffer.from([0, 0, 0, 0]),
+      Buffer.from("WEBP", "latin1"),
+    ]);
+    expect(detectImageType(buf)).toBe("image/webp");
+  });
+
+  it("detects AVIF by ftyp brand", () => {
+    const buf = Buffer.concat([
+      Buffer.from([0, 0, 0, 0]),
+      Buffer.from("ftyp", "latin1"),
+      Buffer.from("avif", "latin1"),
+      Buffer.from([0, 0, 0, 0]),
+    ]);
+    expect(detectImageType(buf)).toBe("image/avif");
+  });
+
+  it("rejects non-image content", () => {
+    expect(detectImageType(Buffer.from("plain text", "latin1"))).toBeNull();
+    expect(detectImageType(Buffer.from([0, 1, 2, 3]))).toBeNull();
+    expect(detectImageType(Buffer.from([]))).toBeNull();
   });
 });

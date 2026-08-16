@@ -3,9 +3,11 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import type { TransactionStatus } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { checkRateLimit, ipFromHeaders } from "@/lib/rate-limit";
 
 const validStatuses: TransactionStatus[] = [
   "PROPOSED",
@@ -31,6 +33,11 @@ function s(value: FormDataEntryValue | null): string {
 export async function requestTransaction(formData: FormData): Promise<void> {
   const session = await getServerSession(authOptions);
   if (!session?.user) redirect("/login");
+
+  const ip = ipFromHeaders(await headers());
+  if (!checkRateLimit(`transaction:${ip}`, 20, 60 * 60 * 1000).ok) {
+    redirect("/listings");
+  }
 
   const listingId = s(formData.get("listingId"));
   if (!listingId) redirect("/listings");
@@ -175,7 +182,7 @@ export async function createReview(formData: FormData): Promise<void> {
 
   const transactionId = s(formData.get("transactionId"));
   const rating = Math.round(Number(formData.get("rating")));
-  const comment = s(formData.get("comment"));
+  const comment = s(formData.get("comment")).slice(0, 2000);
   if (!transactionId || rating < 1 || rating > 5) redirect("/transactions");
 
   const tx = await db.transaction.findUnique({ where: { id: transactionId } });

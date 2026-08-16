@@ -118,7 +118,7 @@ export async function addNote(formData: FormData): Promise<void> {
   if (!session?.user) redirect("/login");
 
   const recordId = s(formData.get("recordId"));
-  const note = s(formData.get("note"));
+  const note = s(formData.get("note")).slice(0, 2000);
   const kind = (s(formData.get("kind")) || "GENERAL") as PlantNoteKind;
   const amountRaw = s(formData.get("amount"));
 
