@@ -12,9 +12,13 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "postinstall": "prisma generate"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.2.1",
@@ -45,5 +49,8 @@
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "vitest": "^4.1.10"
+  },
+  "overrides": {
+    "sharp": "0.35.3"
   }
 }
