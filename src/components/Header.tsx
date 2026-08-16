@@ -35,6 +35,11 @@ export default async function Header() {
             <Link href="/listings/new" className="text-gray-700 hover:text-green-800">
               Sell / Trade
             </Link>
+            {user && (
+              <Link href="/listings/mine" className="text-gray-700 hover:text-green-800">
+                My listings
+              </Link>
+            )}
             <Link href="/transactions" className="text-gray-700 hover:text-green-800">
               Transactions
             </Link>

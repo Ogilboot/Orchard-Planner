@@ -21,7 +21,7 @@ export default async function VarietyDetailPage({
       synonyms: true,
       listings: {
         where: { status: "ACTIVE" },
-        include: { user: true },
+        include: { user: true, photos: { orderBy: { sortOrder: "asc" } } },
         orderBy: { createdAt: "desc" },
       },
     },
@@ -92,6 +92,13 @@ export default async function VarietyDetailPage({
           <ul className="space-y-3">
             {variety.listings.map((l) => (
               <li key={l.id} className="rounded-lg border border-gray-200 bg-white p-4">
+                {l.photos[0] && (
+                  <img
+                    src={l.photos[0].url}
+                    alt=""
+                    className="mb-3 h-28 w-28 rounded-md object-cover"
+                  />
+                )}
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <span className="font-medium capitalize">

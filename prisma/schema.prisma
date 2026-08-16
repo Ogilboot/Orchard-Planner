@@ -110,10 +110,12 @@ model Listing {
 }
 
 model ListingPhoto {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   url       String
   listingId String
-  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
 }
 
 model WantListEntry {

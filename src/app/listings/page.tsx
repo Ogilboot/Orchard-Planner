@@ -59,7 +59,7 @@ export default async function ListingsPage({
 
   const listings = await db.listing.findMany({
     where,
-    include: { variety: true, user: true },
+    include: { variety: true, user: true, photos: { orderBy: { sortOrder: "asc" } } },
     orderBy: { createdAt: "desc" },
     take: 100,
   });
@@ -146,7 +146,14 @@ export default async function ListingsPage({
               key={l.id}
               className="flex items-start justify-between gap-3 rounded-lg border border-gray-200 bg-white p-4"
             >
-              <div>
+              {l.photos[0] && (
+                <img
+                  src={l.photos[0].url}
+                  alt=""
+                  className="h-20 w-20 shrink-0 rounded-md object-cover"
+                />
+              )}
+              <div className="flex-1">
                 <Link
                   href={`/varieties/${l.varietyId}`}
                   className="font-medium text-green-800 hover:underline"

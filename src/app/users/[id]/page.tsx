@@ -16,7 +16,7 @@ export default async function UserProfilePage({
     include: {
       listings: {
         where: { status: "ACTIVE" },
-        include: { variety: true },
+        include: { variety: true, photos: { orderBy: { sortOrder: "asc" } } },
         orderBy: { createdAt: "desc" },
         take: 20,
       },
@@ -73,12 +73,21 @@ export default async function UserProfilePage({
           <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white">
             {user.listings.map((l) => (
               <li key={l.id} className="flex items-center justify-between px-4 py-3">
-                <Link
-                  href={`/varieties/${l.varietyId}`}
-                  className="font-medium text-green-800 hover:underline"
-                >
-                  {l.variety.commonName}
-                </Link>
+                <div className="flex items-center gap-3">
+                  {l.photos[0] && (
+                    <img
+                      src={l.photos[0].url}
+                      alt=""
+                      className="h-12 w-12 rounded object-cover"
+                    />
+                  )}
+                  <Link
+                    href={`/varieties/${l.varietyId}`}
+                    className="font-medium text-green-800 hover:underline"
+                  >
+                    {l.variety.commonName}
+                  </Link>
+                </div>
                 <span className="text-sm text-gray-500">
                   {l.tradeOnly
                     ? "Trade only"

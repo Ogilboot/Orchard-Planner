@@ -155,6 +155,20 @@ export default async function NewListingPage({
           />
         </div>
 
+        <div>
+          <label className="block text-sm font-medium">Photos (up to 4)</label>
+          <input
+            type="file"
+            name="photos"
+            accept="image/*"
+            multiple
+            className="mt-1 w-full text-sm"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            JPEG, PNG, WebP, GIF or AVIF, max 5MB each.
+          </p>
+        </div>
+
         <button type="submit" className="rounded-lg bg-green-800 px-4 py-2 text-white">
           Post listing
         </button>

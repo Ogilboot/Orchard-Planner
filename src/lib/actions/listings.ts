@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { isAcceptedPhoto, MAX_LISTING_PHOTOS, savePhoto } from "@/lib/photo";
 
 const materialTypes = [
   "SCION_WOOD",
@@ -99,6 +100,23 @@ export async function createListing(formData: FormData): Promise<void> {
           message: `A new listing for "${variety.commonName}" is now available.`,
           listingId: listing.id,
         })),
+      });
+    }
+  }
+
+  const photoFiles = (formData.getAll("photos") as File[])
+    .filter(isAcceptedPhoto)
+    .slice(0, MAX_LISTING_PHOTOS);
+
+  if (photoFiles.length > 0) {
+    const saved: string[] = [];
+    for (const file of photoFiles) {
+      const url = await savePhoto(file).catch(() => null);
+      if (url) saved.push(url);
+    }
+    if (saved.length > 0) {
+      await db.listingPhoto.createMany({
+        data: saved.map((url, i) => ({ listingId: listing.id, url, sortOrder: i })),
       });
     }
   }
