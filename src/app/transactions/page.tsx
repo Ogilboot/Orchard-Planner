@@ -7,6 +7,7 @@ import {
   shipTransaction,
   updateShippingAddress,
 } from "@/lib/actions/transactions";
+import { formatPounds } from "@/lib/price";
 
 export const dynamic = "force-dynamic";
 
@@ -95,13 +96,11 @@ export default async function TransactionsPage() {
                   </div>
                   <div className="shrink-0 text-right">
                     <div className="font-semibold">
-                      {tx.amountPence != null
-                        ? `£${(tx.amountPence / 100).toFixed(2)}`
-                        : "Trade"}
+                      {tx.amountPence != null ? formatPounds(tx.amountPence) : "Trade"}
                       {tx.postagePence != null && (
                         <span className="text-xs font-normal text-gray-500">
                           {" "}
-                          + £{(tx.postagePence / 100).toFixed(2)} postage
+                          + {formatPounds(tx.postagePence)} postage
                         </span>
                       )}
                     </div>

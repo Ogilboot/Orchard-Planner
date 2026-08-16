@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/get-user";
+import { formatListingPriceShort } from "@/lib/price";
 
 export const dynamic = "force-dynamic";
 
@@ -85,11 +86,7 @@ export default async function FollowingPage() {
                         </span>
                       </div>
                       <span className="text-sm font-semibold">
-                        {l.tradeOnly
-                          ? "Trade"
-                          : l.pricePence != null
-                            ? `£${(l.pricePence / 100).toFixed(2)}`
-                            : "—"}
+                        {formatListingPriceShort(l.tradeOnly, l.pricePence)}
                       </span>
                     </li>
                   ))}

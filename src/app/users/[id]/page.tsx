@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/get-user";
 import { followUser, unfollowUser } from "@/lib/actions/follow";
 import { reportReview } from "@/lib/actions/reports";
+import { formatListingPriceShort } from "@/lib/price";
 
 export const dynamic = "force-dynamic";
 
@@ -136,11 +137,7 @@ export default async function UserProfilePage({
                   </Link>
                 </div>
                 <span className="text-sm text-gray-500">
-                  {l.tradeOnly
-                    ? "Trade only"
-                    : l.pricePence != null
-                      ? `£${(l.pricePence / 100).toFixed(2)}`
-                      : "—"}
+                  {formatListingPriceShort(l.tradeOnly, l.pricePence)}
                 </span>
               </li>
             ))}

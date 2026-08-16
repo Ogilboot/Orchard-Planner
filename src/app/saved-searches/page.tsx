@@ -2,22 +2,9 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/get-user";
 import { deleteSavedSearch } from "@/lib/actions/saved-search";
+import { savedSearchHref } from "@/lib/search";
 
 export const dynamic = "force-dynamic";
-
-function searchHref(query: string): string {
-  try {
-    const parsed = JSON.parse(query) as Record<string, string>;
-    const params = new URLSearchParams();
-    for (const [k, v] of Object.entries(parsed)) {
-      if (v) params.set(k, v);
-    }
-    const qs = params.toString();
-    return qs ? `/listings?${qs}` : "/listings";
-  } catch {
-    return "/listings";
-  }
-}
 
 export default async function SavedSearchesPage() {
   const user = await getCurrentUser();
@@ -54,7 +41,7 @@ export default async function SavedSearchesPage() {
             <li key={s.id} className="flex items-center justify-between px-4 py-3">
               <div>
                 <Link
-                  href={searchHref(s.query)}
+                  href={savedSearchHref(s.query)}
                   className="font-medium text-green-800 hover:underline"
                 >
                   {s.name}

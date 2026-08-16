@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/get-user";
 import { sendMessage } from "@/lib/actions/messages";
 import { requestTransaction } from "@/lib/actions/transactions";
 import { reportListing } from "@/lib/actions/reports";
+import { formatListingPrice, formatListingPriceShort, formatMaterialType, formatPounds } from "@/lib/price";
 
 export const dynamic = "force-dynamic";
 
@@ -86,16 +87,10 @@ export default async function ListingDetailPage({
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-xl font-semibold">
-                  {listing.tradeOnly
-                    ? "Trade only"
-                    : listing.pricePence != null
-                      ? `£${(listing.pricePence / 100).toFixed(2)}`
-                      : "—"}
+                  {formatListingPrice(listing.tradeOnly, listing.pricePence)}
                 </div>
                 <div className="mt-1 text-sm text-gray-500">
-                  <span className="capitalize">
-                    {listing.type.replaceAll("_", " ").toLowerCase()}
-                  </span>
+                  <span className="capitalize">{formatMaterialType(listing.type)}</span>
                   <span className="mx-1">·</span>
                   {listing.quantity} available
                 </div>
@@ -103,7 +98,7 @@ export default async function ListingDetailPage({
             </div>
             {listing.postagePence != null && (
               <p className="mt-3 text-sm text-gray-600">
-                Postage: £{(listing.postagePence / 100).toFixed(2)}
+                Postage: {formatPounds(listing.postagePence)}
               </p>
             )}
             {listing.shippingNotes && (
@@ -249,11 +244,7 @@ export default async function ListingDetailPage({
                   </span>
                 </div>
                 <span className="shrink-0 text-sm font-semibold">
-                  {s.tradeOnly
-                    ? "Trade"
-                    : s.pricePence != null
-                      ? `£${(s.pricePence / 100).toFixed(2)}`
-                      : "—"}
+                  {formatListingPriceShort(s.tradeOnly, s.pricePence)}
                 </span>
               </li>
             ))}

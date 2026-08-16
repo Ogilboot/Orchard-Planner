@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/get-user";
+import { buildSearchHref } from "@/lib/search";
 
 export const dynamic = "force-dynamic";
 
@@ -11,13 +12,7 @@ function buildQuery(
   base: Record<string, string>,
   overrides: Record<string, string | undefined>,
 ): string {
-  const merged = { ...base, ...overrides };
-  const params = new URLSearchParams();
-  for (const [k, v] of Object.entries(merged)) {
-    if (v) params.set(k, v);
-  }
-  const qs = params.toString();
-  return qs ? `/varieties?${qs}` : "/varieties";
+  return buildSearchHref(base, overrides, "/varieties");
 }
 
 export default async function VarietiesPage({

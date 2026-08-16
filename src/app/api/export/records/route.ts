@@ -2,13 +2,9 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { toCsv } from "@/lib/csv";
 
 export const dynamic = "force-dynamic";
-
-function csvCell(value: string | number | null | undefined): string {
-  const s = value == null ? "" : String(value);
-  return /[",\n]/.test(s) ? `"${s.replaceAll('"', '""')}"` : s;
-}
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -22,30 +18,32 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
   });
 
-  const header = [
-    "Variety",
-    "Rootstock",
-    "Rootstock source",
-    "Scion source",
-    "Graft date",
-    "Location",
-    "Status",
-    "Notes",
-    "Created",
+  const rows = [
+    [
+      "Variety",
+      "Rootstock",
+      "Rootstock source",
+      "Scion source",
+      "Graft date",
+      "Location",
+      "Status",
+      "Notes",
+      "Created",
+    ],
+    ...records.map((r) => [
+      r.variety?.commonName ?? "",
+      r.rootstockRef?.name ?? r.rootstock ?? "",
+      r.rootstockSource ?? "",
+      r.scionSource ?? "",
+      r.graftDate ? r.graftDate.toISOString().slice(0, 10) : "",
+      r.location ?? "",
+      r.status,
+      r.notes ?? "",
+      r.createdAt.toISOString().slice(0, 10),
+    ]),
   ];
-  const rows = records.map((r) => [
-    r.variety?.commonName ?? "",
-    r.rootstockRef?.name ?? r.rootstock ?? "",
-    r.rootstockSource ?? "",
-    r.scionSource ?? "",
-    r.graftDate ? r.graftDate.toISOString().slice(0, 10) : "",
-    r.location ?? "",
-    r.status,
-    r.notes ?? "",
-    r.createdAt.toISOString().slice(0, 10),
-  ]);
 
-  const csv = [header, ...rows].map((row) => row.map(csvCell).join(",")).join("\n");
+  const csv = toCsv(rows);
 
   return new NextResponse(csv, {
     headers: {

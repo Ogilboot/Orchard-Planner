@@ -5,6 +5,8 @@ import { getCurrentUser } from "@/lib/get-user";
 import { addWantEntry } from "@/lib/actions/wantlist";
 import { sendMessage } from "@/lib/actions/messages";
 import { requestTransaction } from "@/lib/actions/transactions";
+import { compatiblePollinationGroups } from "@/lib/pollination";
+import { formatListingPrice, formatMaterialType } from "@/lib/price";
 
 export const dynamic = "force-dynamic";
 
@@ -32,10 +34,9 @@ export default async function VarietyDetailPage({
 
   let pollinators: { id: string; commonName: string; pollinationGroup: string | null }[] = [];
   if (variety.species && variety.pollinationGroup) {
-    const group = Number(variety.pollinationGroup);
-    const compatibleGroups = Number.isFinite(group)
-      ? new Set([group - 1, group, group + 1].filter((n) => n >= 0).map(String))
-      : new Set<string>();
+    const compatibleGroups = new Set(
+      compatiblePollinationGroups(variety.pollinationGroup),
+    );
     pollinators = await db.variety.findMany({
       where: {
         species: variety.species,
@@ -174,7 +175,7 @@ export default async function VarietyDetailPage({
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <span className="font-medium capitalize">
-                      {l.type.replaceAll("_", " ").toLowerCase()}
+                      {formatMaterialType(l.type)}
                     </span>
                     <span className="ml-2 text-sm text-gray-500">
                       <Link
@@ -196,11 +197,7 @@ export default async function VarietyDetailPage({
                       View listing →
                     </Link>
                     <span className="font-semibold">
-                      {l.tradeOnly
-                        ? "Trade only"
-                        : l.pricePence != null
-                          ? `£${(l.pricePence / 100).toFixed(2)}`
-                          : "—"}
+                      {formatListingPrice(l.tradeOnly, l.pricePence)}
                     </span>
                   </div>
                 </div>

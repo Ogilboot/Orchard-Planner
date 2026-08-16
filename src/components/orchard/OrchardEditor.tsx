@@ -8,6 +8,7 @@ import {
   type ElementType,
   type PlotElementData,
 } from "@/lib/orchard-types";
+import { detectOverlaps } from "@/lib/spacing";
 
 const PPM = 24;
 const SNAP = 0.5;
@@ -92,23 +93,11 @@ export default function OrchardEditor({
 
   const overlaps = useMemo(() => {
     const plants = elements.filter((e) => e.type === "TREE" || e.type === "SHRUB");
-    const results: string[] = [];
-    for (let i = 0; i < plants.length; i++) {
-      for (let j = i + 1; j < plants.length; j++) {
-        const a = plants[i];
-        const b = plants[j];
-        const dx = a.x - b.x;
-        const dy = a.y - b.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const minGap = (Math.max(a.width, a.height) + Math.max(b.width, b.height)) / 2;
-        if (dist < minGap && dist > 0.001) {
-          const labelA = a.label || (a.varietyId ? varietyMap.get(a.varietyId) : null) || a.type;
-          const labelB = b.label || (b.varietyId ? varietyMap.get(b.varietyId) : null) || b.type;
-          results.push(`${labelA} & ${labelB} are ${dist.toFixed(1)}m apart`);
-        }
-      }
-    }
-    return results;
+    return detectOverlaps(plants).map(({ a, b, distance }) => {
+      const labelA = a.label || (a.varietyId ? varietyMap.get(a.varietyId) : null) || a.type;
+      const labelB = b.label || (b.varietyId ? varietyMap.get(b.varietyId) : null) || b.type;
+      return `${labelA} & ${labelB} are ${distance.toFixed(1)}m apart`;
+    });
   }, [elements, varietyMap]);
 
   useEffect(() => {

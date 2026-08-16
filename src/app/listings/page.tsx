@@ -3,6 +3,8 @@ import { Prisma, type MaterialType } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/get-user";
 import { saveSearch } from "@/lib/actions/saved-search";
+import { buildSearchHref } from "@/lib/search";
+import { formatListingPrice, formatMaterialType } from "@/lib/price";
 
 export const dynamic = "force-dynamic";
 
@@ -31,13 +33,7 @@ function buildQuery(
   base: Record<string, string>,
   overrides: Record<string, string | undefined>,
 ): string {
-  const merged = { ...base, ...overrides };
-  const params = new URLSearchParams();
-  for (const [k, v] of Object.entries(merged)) {
-    if (v) params.set(k, v);
-  }
-  const qs = params.toString();
-  return qs ? `/listings?${qs}` : "/listings";
+  return buildSearchHref(base, overrides, "/listings");
 }
 
 export default async function ListingsPage({
@@ -257,9 +253,7 @@ export default async function ListingsPage({
                   {l.variety.commonName}
                 </Link>
                 <div className="mt-1 text-sm text-gray-500">
-                  <span className="capitalize">
-                    {l.type.replaceAll("_", " ").toLowerCase()}
-                  </span>
+                  <span className="capitalize">{formatMaterialType(l.type)}</span>
                   <span className="mx-1">·</span>
                   <Link
                     href={`/users/${l.user.id}`}
@@ -287,11 +281,7 @@ export default async function ListingsPage({
               </div>
               <div className="shrink-0 text-right">
                 <div className="font-semibold">
-                  {l.tradeOnly
-                    ? "Trade only"
-                    : l.pricePence != null
-                      ? `£${(l.pricePence / 100).toFixed(2)}`
-                      : "—"}
+                  {formatListingPrice(l.tradeOnly, l.pricePence)}
                 </div>
                 <div className="mt-1 text-xs text-gray-500">
                   {l.quantity} available

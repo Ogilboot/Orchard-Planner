@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/get-user";
+import { formatListingPrice, formatMaterialType } from "@/lib/price";
 
 export const dynamic = "force-dynamic";
 
@@ -120,18 +121,12 @@ export default async function HomePage() {
                   {l.variety.commonName}
                 </Link>
                 <div className="mt-1 text-sm text-gray-500">
-                  <span className="capitalize">
-                    {l.type.replaceAll("_", " ").toLowerCase()}
-                  </span>
+                  <span className="capitalize">{formatMaterialType(l.type)}</span>
                   <span className="mx-1">·</span>
                   {l.user.name ?? l.user.email}
                 </div>
                 <div className="mt-1 font-semibold">
-                  {l.tradeOnly
-                    ? "Trade only"
-                    : l.pricePence != null
-                      ? `£${(l.pricePence / 100).toFixed(2)}`
-                      : "—"}
+                  {formatListingPrice(l.tradeOnly, l.pricePence)}
                 </div>
               </li>
             ))}
