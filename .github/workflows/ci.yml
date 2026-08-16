@@ -21,7 +21,17 @@ jobs:
 
       - name: Configure environment
         run: |
-          printf 'DATABASE_URL="file:./dev.db"\nNEXTAUTH_SECRET="%s"\nNEXTAUTH_URL="http://localhost:3000"\n' "$(openssl rand -hex 32)" > .env
+          SECRET="$(openssl rand -hex 32)"
+          {
+            echo "DATABASE_URL=file:./dev.db"
+            echo "NEXTAUTH_SECRET=${SECRET}"
+            echo "NEXTAUTH_URL=http://localhost:3000"
+          } >> "$GITHUB_ENV"
+          {
+            printf 'DATABASE_URL="file:./dev.db"\n'
+            printf 'NEXTAUTH_SECRET="%s"\n' "${SECRET}"
+            printf 'NEXTAUTH_URL="http://localhost:3000"\n'
+          } > .env
 
       - name: Apply database migrations
         run: npx prisma migrate deploy
