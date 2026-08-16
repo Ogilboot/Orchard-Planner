@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const user = await getCurrentUser();
 
-  const [recentListings, popularVarieties, stats] = await Promise.all([
+  const [recentListings, popularVarieties, stats, ratedSellers] = await Promise.all([
     db.listing.findMany({
       where: { status: "ACTIVE" },
       include: { variety: true, user: true, photos: { orderBy: { sortOrder: "asc" } } },
@@ -25,9 +25,33 @@ export default async function HomePage() {
       db.listing.count({ where: { status: "ACTIVE" } }),
       db.user.count(),
     ]),
+    db.user.findMany({
+      where: { reviewsReceived: { some: {} } },
+      include: {
+        _count: { select: { listings: true } },
+        reviewsReceived: { select: { rating: true } },
+      },
+      take: 50,
+    }),
   ]);
 
   const [varietyCount, listingCount, userCount] = stats;
+
+  const topGrowers = ratedSellers
+    .map((s) => ({
+      id: s.id,
+      name: s.name ?? s.email,
+      location: s.location,
+      isVerifiedNursery: s.isVerifiedNursery,
+      listings: s._count.listings,
+      reviews: s.reviewsReceived.length,
+      avg:
+        s.reviewsReceived.reduce((sum, r) => sum + r.rating, 0) /
+        s.reviewsReceived.length,
+    }))
+    .filter((s) => s.reviews >= 1)
+    .sort((a, b) => b.avg - a.avg || b.reviews - a.reviews)
+    .slice(0, 4);
 
   return (
     <div className="space-y-10">
@@ -165,6 +189,36 @@ export default async function HomePage() {
           ))}
         </ul>
       </section>
+
+      {topGrowers.length > 0 && (
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-semibold tracking-tight">Top-rated growers</h2>
+            <Link href="/nurseries" className="text-sm font-medium text-green-700 hover:underline">
+              Browse nurseries →
+            </Link>
+          </div>
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {topGrowers.map((g) => (
+              <li key={g.id}>
+                <Link
+                  href={`/users/${g.id}`}
+                  className="card flex h-full flex-col items-center p-5 text-center transition-shadow hover:shadow-md"
+                >
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-sm font-semibold text-green-800">
+                    {(g.name.split(" ").map((p) => p[0]).join("").slice(0, 2)).toUpperCase()}
+                  </span>
+                  <span className="mt-3 font-semibold text-green-800">{g.name}</span>
+                  {g.location && <span className="text-sm text-gray-500">{g.location}</span>}
+                  <span className="mt-1 text-sm text-amber-500">
+                    {g.avg.toFixed(1)} ★ ({g.reviews})
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="grid gap-4 sm:grid-cols-3">
         {[

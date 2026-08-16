@@ -11,7 +11,18 @@ const CREATE_SQL = `
   );
 `;
 
+const CREATE_USER_SQL = `
+  CREATE VIRTUAL TABLE IF NOT EXISTS user_fts USING fts5(
+    id UNINDEXED,
+    name,
+    location,
+    bio,
+    tokenize = 'unicode61'
+  );
+`;
+
 let ensured = false;
+let ensuredUsers = false;
 
 export async function ensureVarietyFts(): Promise<void> {
   if (ensured) return;
@@ -20,6 +31,16 @@ export async function ensureVarietyFts(): Promise<void> {
     ensured = true;
   } catch {
     // ignore — search will fall back to "contains"
+  }
+}
+
+export async function ensureUserFts(): Promise<void> {
+  if (ensuredUsers) return;
+  try {
+    await db.$executeRawUnsafe(CREATE_USER_SQL);
+    ensuredUsers = true;
+  } catch {
+    // ignore
   }
 }
 
@@ -109,4 +130,67 @@ export function ftsQuery(input: string): string {
     .filter(Boolean);
   if (tokens.length === 0) return "";
   return tokens.map((t) => `"${t}"*`).join(" ");
+}
+
+export interface IndexableUser {
+  id: string;
+  name?: string | null;
+  location?: string | null;
+  bio?: string | null;
+}
+
+export async function indexUser(u: IndexableUser): Promise<void> {
+  await ensureUserFts();
+  try {
+    await db.$executeRawUnsafe("DELETE FROM user_fts WHERE id = ?", u.id);
+    await db.$executeRawUnsafe(
+      "INSERT INTO user_fts(id, name, location, bio) VALUES (?, ?, ?, ?)",
+      u.id,
+      u.name ?? "",
+      u.location ?? "",
+      u.bio ?? "",
+    );
+  } catch {
+    // ignore
+  }
+}
+
+export async function deleteUserFromIndex(id: string): Promise<void> {
+  await ensureUserFts();
+  try {
+    await db.$executeRawUnsafe("DELETE FROM user_fts WHERE id = ?", id);
+  } catch {
+    // ignore
+  }
+}
+
+export async function searchUsers(
+  query: string,
+  limit = 100,
+): Promise<{ id: string; rank: number }[]> {
+  await ensureUserFts();
+  const fts = ftsQuery(query);
+  if (!fts) return [];
+  const safeLimit = Math.max(1, Math.min(500, Math.floor(limit)));
+  try {
+    const rows = await db.$queryRawUnsafe<{ id: string; rank_score: number }[]>(
+      `SELECT id, rank AS rank_score FROM user_fts WHERE user_fts MATCH ? ORDER BY rank LIMIT ${safeLimit}`,
+      fts,
+    );
+    return rows.map((r) => ({ id: r.id, rank: Number(r.rank_score) }));
+  } catch {
+    return [];
+  }
+}
+
+export async function rebuildUserIndex(): Promise<number> {
+  await ensureUserFts();
+  await db.$executeRawUnsafe("DELETE FROM user_fts");
+  const users = await db.user.findMany({
+    select: { id: true, name: true, location: true, bio: true },
+  });
+  for (const u of users) {
+    await indexUser(u);
+  }
+  return users.length;
 }

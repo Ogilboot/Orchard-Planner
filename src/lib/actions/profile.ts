@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { indexUser } from "@/lib/fts";
 
 const schema = z.object({
   name: z.string().trim().min(1).max(100),
@@ -46,6 +47,8 @@ export async function updateProfile(formData: FormData): Promise<void> {
       yearsActive: yearsActive ?? null,
     },
   });
+
+  await indexUser({ id: session.user.id, name, location, bio });
 
   revalidatePath("/profile");
   revalidatePath(`/users/${session.user.id}`);

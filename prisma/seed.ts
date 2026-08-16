@@ -420,6 +420,30 @@ async function main() {
     },
   });
 
+  console.log("Building seller search index…");
+  await db.$executeRawUnsafe(`
+    CREATE VIRTUAL TABLE IF NOT EXISTS user_fts USING fts5(
+      id UNINDEXED,
+      name,
+      location,
+      bio,
+      tokenize = 'unicode61'
+    );
+  `);
+  await db.$executeRawUnsafe("DELETE FROM user_fts");
+  const allUsers = await db.user.findMany({
+    select: { id: true, name: true, location: true, bio: true },
+  });
+  for (const u of allUsers) {
+    await db.$executeRawUnsafe(
+      "INSERT INTO user_fts(id, name, location, bio) VALUES (?, ?, ?, ?)",
+      u.id,
+      u.name ?? "",
+      u.location ?? "",
+      u.bio ?? "",
+    );
+  }
+
   console.log("Seeding listings…");
   const ashmeads = varietyMap.get("Ashmead's Kernel")!;
   const kentishCob = varietyMap.get("Kentish Cob")!;

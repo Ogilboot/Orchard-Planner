@@ -46,6 +46,7 @@ export default async function Header() {
             {user && <NavLink href="/dashboard">Dashboard</NavLink>}
             <NavLink href="/varieties">Varieties</NavLink>
             <NavLink href="/rootstocks">Rootstocks</NavLink>
+            <NavLink href="/nurseries">Nurseries</NavLink>
             <NavLink href="/listings">Browse</NavLink>
             <NavLink href="/orchard">My orchard</NavLink>
             <NavLink href="/records">Records</NavLink>

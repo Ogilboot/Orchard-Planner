@@ -37,6 +37,11 @@ export default function Footer() {
                 Browse listings
               </Link>
             </li>
+            <li>
+              <Link href="/nurseries" className="text-gray-600 hover:text-green-700">
+                Nurseries
+              </Link>
+            </li>
           </ul>
         </div>
 

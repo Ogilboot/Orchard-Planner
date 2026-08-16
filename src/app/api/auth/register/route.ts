@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { indexUser } from "@/lib/fts";
 
 const schema = z.object({
   name: z.string().trim().min(1).max(100),
@@ -31,9 +32,11 @@ export async function POST(req: Request) {
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  await db.user.create({
+  const user = await db.user.create({
     data: { name, email: email.toLowerCase(), passwordHash },
   });
+
+  await indexUser({ id: user.id, name: user.name, location: null, bio: null });
 
   return NextResponse.json({ ok: true });
 }
