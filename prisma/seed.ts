@@ -1,5 +1,6 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { bulkVarieties } from "./data/varieties";
 
 const db = new PrismaClient();
 
@@ -315,6 +316,34 @@ async function main() {
     varietyMap.set(v.commonName, created.id);
   }
 
+  console.log("Seeding bulk varieties…");
+  let bulkCount = 0;
+  for (const b of bulkVarieties) {
+    if (varietyMap.has(b.commonName)) continue;
+    const created = await db.variety.create({
+      data: {
+        commonName: b.commonName,
+        species: b.species,
+        chillHours: b.chillHours ?? null,
+        hardinessZone: b.hardinessZone ?? null,
+        pollinationGroup: b.pollinationGroup ?? null,
+        harvestWindow: b.harvestWindow ?? null,
+        flavorNotes: b.flavorNotes ?? null,
+        diseaseResistanceNotes: b.diseaseResistanceNotes ?? null,
+        originNotes: b.originNotes ?? null,
+        selfFertile: b.selfFertile ?? null,
+        triploid: b.triploid ?? null,
+        diseaseRating: b.diseaseRating ?? null,
+        heritage: b.heritage ?? false,
+        synonyms: b.synonyms?.length
+          ? { create: b.synonyms.map((name) => ({ name })) }
+          : undefined,
+      },
+    });
+    varietyMap.set(b.commonName, created.id);
+    bulkCount++;
+  }
+
   const passwordHash = await bcrypt.hash("password123", 10);
 
   console.log("Seeding rootstocks…");
@@ -584,7 +613,7 @@ async function main() {
   });
 
   console.log(
-    "Seeded 18 varieties, 3 users (demo@example.com, ruth@example.com, admin@example.com — password123), 8 listings, 1 plot, records, transactions and messages.",
+    `Seeded ${varieties.length + bulkCount} varieties, 3 users (demo@example.com, ruth@example.com, admin@example.com — password123), 8 listings, 1 plot, records, transactions and messages.`,
   );
 }
 

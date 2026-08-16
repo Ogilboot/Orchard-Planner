@@ -32,3 +32,19 @@ test("admin can view the admin dashboard", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Admin" })).toBeVisible();
   await expect(page.getByText("Site overview and user management.")).toBeVisible();
 });
+
+test("admin can manage varieties and rootstocks", async ({ page }) => {
+  await page.goto("/login");
+  await page.fill('input[name="email"]', "admin@example.com");
+  await page.fill('input[name="password"]', "password123");
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.waitForURL("/");
+
+  await page.goto("/admin/varieties");
+  await expect(page.getByRole("heading", { name: "Manage varieties" })).toBeVisible();
+  await expect(page.getByText("Bulk import")).toBeVisible();
+
+  await page.goto("/admin/rootstocks");
+  await expect(page.getByRole("heading", { name: "Manage rootstocks" })).toBeVisible();
+  await expect(page.getByText("MM106")).toBeVisible();
+});

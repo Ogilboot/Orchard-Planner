@@ -49,6 +49,26 @@ export default async function AdminPage() {
       <div>
         <h1 className="text-2xl font-bold">Admin</h1>
         <p className="text-sm text-gray-500">Site overview and user management.</p>
+        <div className="mt-3 flex flex-wrap gap-2 text-sm">
+          <Link
+            href="/admin/varieties"
+            className="rounded-md border border-gray-300 px-3 py-1.5 text-gray-700"
+          >
+            Manage varieties
+          </Link>
+          <Link
+            href="/admin/rootstocks"
+            className="rounded-md border border-gray-300 px-3 py-1.5 text-gray-700"
+          >
+            Manage rootstocks
+          </Link>
+          <Link
+            href="/admin/import"
+            className="rounded-md border border-gray-300 px-3 py-1.5 text-gray-700"
+          >
+            Bulk import
+          </Link>
+        </div>
       </div>
 
       <section className="grid gap-4 sm:grid-cols-4">

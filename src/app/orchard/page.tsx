@@ -28,7 +28,7 @@ export default async function OrchardPage({
 
   const { plot: plotParam } = await searchParams;
 
-  const [plots, varieties] = await Promise.all([
+  const [plots, varieties, records] = await Promise.all([
     db.plot.findMany({
       where: { userId: user.id },
       include: { elements: true },
@@ -36,11 +36,35 @@ export default async function OrchardPage({
     }),
     db.variety.findMany({
       orderBy: { commonName: "asc" },
-      select: { id: true, commonName: true },
+      select: {
+        id: true,
+        commonName: true,
+        species: true,
+        pollinationGroup: true,
+        harvestWindow: true,
+      },
+    }),
+    db.plantRecord.findMany({
+      where: { userId: user.id },
+      include: { variety: true, rootstockRef: true },
+      orderBy: { updatedAt: "desc" },
     }),
   ]);
 
   const current = plots.find((p) => p.id === plotParam) ?? plots[0] ?? null;
+
+  const recordOptions = records.map((r) => ({
+    id: r.id,
+    label: `${r.variety?.commonName ?? "Unnamed plant"}${r.rootstockRef?.name ? ` on ${r.rootstockRef.name}` : ""}`,
+  }));
+
+  const plotVarieties = current
+    ? varieties
+        .filter((v) => current.elements.some((e) => e.varietyId === v.id))
+        .sort((a, b) =>
+          (a.pollinationGroup ?? "\uffff").localeCompare(b.pollinationGroup ?? "\uffff"),
+        )
+    : [];
 
   const initialElements: PlotElementData[] = (current?.elements ?? []).map((e) => ({
     id: e.id,
@@ -124,7 +148,39 @@ export default async function OrchardPage({
             plotId={current.id}
             initialElements={initialElements}
             varieties={varieties}
+            records={recordOptions}
           />
+
+          {plotVarieties.length > 0 && (
+            <section className="rounded-lg border border-gray-200 bg-white p-4">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+                Varieties in this plan
+              </h2>
+              <ul className="mt-2 divide-y divide-gray-100">
+                {plotVarieties.map((v) => (
+                  <li key={v.id} className="flex items-center justify-between py-2 text-sm">
+                    <div>
+                      <Link
+                        href={`/varieties/${v.id}`}
+                        className="font-medium text-green-800 hover:underline"
+                      >
+                        {v.commonName}
+                      </Link>
+                      {v.species && (
+                        <span className="ml-2 text-xs text-gray-500">{v.species}</span>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      {v.pollinationGroup && v.pollinationGroup !== "N/A"
+                        ? `group ${v.pollinationGroup}`
+                        : ""}
+                      {v.harvestWindow ? ` · ${v.harvestWindow}` : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </>
       ) : (
         <div className="rounded-lg border border-gray-200 bg-white p-6">

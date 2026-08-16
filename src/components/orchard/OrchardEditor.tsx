@@ -68,10 +68,12 @@ export default function OrchardEditor({
   plotId,
   initialElements,
   varieties,
+  records,
 }: {
   plotId: string;
   initialElements: PlotElementData[];
   varieties: { id: string; commonName: string }[];
+  records: { id: string; label: string }[];
 }) {
   const [elements, setElements] = useState<PlotElementData[]>(initialElements);
   const [viewport, setViewport] = useState<Viewport>({ x: 240, y: 120, zoom: 1 });
@@ -541,6 +543,26 @@ export default function OrchardEditor({
                     placeholder="e.g. MM106"
                     className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1 text-sm"
                   />
+                </label>
+              )}
+
+              {(selected.type === "TREE" || selected.type === "SHRUB") && records.length > 0 && (
+                <label className="block text-xs font-medium text-gray-600">
+                  Linked record
+                  <select
+                    value={selected.plantRecordId ?? ""}
+                    onChange={(e) =>
+                      updateSelected({ plantRecordId: e.target.value || null })
+                    }
+                    className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1 text-sm"
+                  >
+                    <option value="">None</option>
+                    {records.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.label}
+                      </option>
+                    ))}
+                  </select>
                 </label>
               )}
 
