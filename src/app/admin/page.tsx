@@ -68,6 +68,12 @@ export default async function AdminPage() {
           >
             Bulk import
           </Link>
+          <Link
+            href="/admin/analytics"
+            className="rounded-md border border-gray-300 px-3 py-1.5 text-gray-700"
+          >
+            Analytics
+          </Link>
         </div>
       </div>
 

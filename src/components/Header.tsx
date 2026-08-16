@@ -32,6 +32,11 @@ export default async function Header() {
             Orchard Planner
           </Link>
           <nav className="flex flex-wrap items-center gap-4 text-sm">
+            {user && (
+              <Link href="/dashboard" className="font-medium text-gray-700 hover:text-green-800">
+                Dashboard
+              </Link>
+            )}
             <Link href="/varieties" className="text-gray-700 hover:text-green-800">
               Varieties
             </Link>
