@@ -1,0 +1,295 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String        @id @default(cuid())
+  name              String?
+  email             String        @unique
+  passwordHash      String?
+  location          String?
+  bio               String?
+  isVerifiedNursery Boolean       @default(false)
+  yearsActive       Int?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  listings          Listing[]
+  wantListEntries   WantListEntry[]
+  plot              Plot?
+  buyerTransactions Transaction[] @relation("BuyerTransactions")
+  sellerTransactions Transaction[] @relation("SellerTransactions")
+  reviewsGiven      Review[]      @relation("ReviewsGiven")
+  reviewsReceived   Review[]      @relation("ReviewsReceived")
+  messagesSent      Message[]     @relation("SentMessages")
+  messagesReceived  Message[]     @relation("ReceivedMessages")
+  notifications     Notification[]
+  plantRecords      PlantRecord[]
+}
+
+model Variety {
+  id                     String          @id @default(cuid())
+  commonName             String
+  species                String?
+  chillHours             Int?
+  hardinessZone          String?
+  pollinationGroup       String?
+  harvestWindow          String?
+  flavorNotes            String?
+  diseaseResistanceNotes String?
+  originNotes            String?
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+
+  synonyms               Synonym[]
+  listings               Listing[]
+  wantListEntries        WantListEntry[]
+  plotElements           PlotElement[]
+  plantRecords           PlantRecord[]
+
+  @@index([commonName])
+}
+
+model Synonym {
+  id        String  @id @default(cuid())
+  name      String
+  varietyId String
+  variety   Variety @relation(fields: [varietyId], references: [id], onDelete: Cascade)
+
+  @@unique([varietyId, name])
+}
+
+enum MaterialType {
+  SCION_WOOD
+  ROOTSTOCK
+  HARDWOOD_CUTTING
+  ROOTED_CUTTING
+  POTTED_TREE
+  SEED
+  DIVISION
+}
+
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  EXPIRED
+}
+
+model Listing {
+  id                String        @id @default(cuid())
+  userId            String
+  varietyId         String
+  type              MaterialType
+  quantity          Int           @default(1)
+  pricePence        Int?
+  tradeOnly         Boolean       @default(false)
+  availabilityStart DateTime?
+  availabilityEnd   DateTime?
+  location          String?
+  description       String?
+  status            ListingStatus @default(ACTIVE)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  variety      Variety       @relation(fields: [varietyId], references: [id], onDelete: Cascade)
+  photos       ListingPhoto[]
+  transactions Transaction[]
+  messages     Message[]
+  notifications Notification[]
+  sourcedPlantRecords PlantRecord[] @relation("SourcedPlantRecords")
+
+  @@index([varietyId])
+  @@index([userId])
+  @@index([status])
+}
+
+model ListingPhoto {
+  id        String  @id @default(cuid())
+  url       String
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+}
+
+model WantListEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  varietyId String
+  notes     String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  variety Variety @relation(fields: [varietyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, varietyId])
+}
+
+enum TransactionStatus {
+  PROPOSED
+  ACCEPTED
+  PAID
+  SHIPPED
+  COMPLETED
+  CANCELLED
+}
+
+model Transaction {
+  id        String            @id @default(cuid())
+  listingId String
+  buyerId   String
+  sellerId  String
+  status    TransactionStatus @default(PROPOSED)
+  amountPence Int?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  listing  Listing   @relation(fields: [listingId], references: [id])
+  buyer    User      @relation("BuyerTransactions", fields: [buyerId], references: [id])
+  seller   User      @relation("SellerTransactions", fields: [sellerId], references: [id])
+  reviews  Review[]
+  messages Message[]
+}
+
+model Review {
+  id            String      @id @default(cuid())
+  transactionId String
+  reviewerId    String
+  revieweeId    String
+  rating        Int
+  comment       String?
+  createdAt     DateTime    @default(now())
+
+  transaction Transaction @relation(fields: [transactionId], references: [id])
+  reviewer    User        @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  reviewee    User        @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+
+  @@unique([transactionId, reviewerId])
+}
+
+model Message {
+  id            String       @id @default(cuid())
+  transactionId String?
+  listingId     String?
+  senderId      String
+  recipientId   String
+  body          String
+  sentAt        DateTime     @default(now())
+
+  transaction Transaction? @relation(fields: [transactionId], references: [id])
+  listing     Listing?     @relation(fields: [listingId], references: [id])
+  sender      User         @relation("SentMessages", fields: [senderId], references: [id])
+  recipient   User         @relation("ReceivedMessages", fields: [recipientId], references: [id])
+}
+
+model Plot {
+  id        String        @id @default(cuid())
+  userId    String        @unique
+  name      String        @default("My orchard")
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  elements PlotElement[]
+}
+
+enum PlotElementType {
+  TREE
+  SHRUB
+  ROW
+  PATH
+  FENCE
+  POND
+  SHED
+  BED
+}
+
+model PlotElement {
+  id        String          @id @default(cuid())
+  plotId    String
+  type      PlotElementType
+  x         Float
+  y         Float
+  width     Float
+  height    Float
+  rotation  Float           @default(0)
+  label     String?
+  varietyId String?
+  rootstock String?
+  color     String?
+  createdAt DateTime        @default(now())
+
+  plot    Plot    @relation(fields: [plotId], references: [id], onDelete: Cascade)
+  variety Variety? @relation(fields: [varietyId], references: [id], onDelete: SetNull)
+
+  @@index([plotId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   @default("WANT_LIST_MATCH")
+  message   String
+  listingId String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing? @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+}
+
+enum PlantStatus {
+  PERSONAL
+  FOR_SALE
+  SOLD
+}
+
+enum PlantNoteKind {
+  HEALTH
+  YIELD
+  GENERAL
+}
+
+model PlantRecord {
+  id              String      @id @default(cuid())
+  userId          String
+  varietyId       String?
+  rootstock       String?
+  rootstockSource String?
+  scionSource     String?
+  sourceListingId String?
+  graftDate       DateTime?
+  location        String?
+  status          PlantStatus @default(PERSONAL)
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  variety       Variety?   @relation(fields: [varietyId], references: [id], onDelete: SetNull)
+  sourceListing Listing?   @relation("SourcedPlantRecords", fields: [sourceListingId], references: [id], onDelete: SetNull)
+  plantNotes    PlantNote[]
+
+  @@index([userId])
+}
+
+model PlantNote {
+  id       String        @id @default(cuid())
+  recordId String
+  kind     PlantNoteKind @default(GENERAL)
+  note     String
+  amount   Float?
+  notedAt  DateTime      @default(now())
+
+  record PlantRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+
+  @@index([recordId])
+}
+
