@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
+const PAGE_SIZE = 20;
+
 const materialTypes: { value: MaterialType; label: string }[] = [
   { value: "SCION_WOOD", label: "Scion wood" },
   { value: "ROOTSTOCK", label: "Rootstock" },
@@ -14,6 +16,28 @@ const materialTypes: { value: MaterialType; label: string }[] = [
   { value: "DIVISION", label: "Division / tuber / rhizome" },
 ];
 
+type SortKey = "newest" | "oldest" | "price_asc" | "price_desc";
+
+const sortOptions: { value: SortKey; label: string }[] = [
+  { value: "newest", label: "Newest first" },
+  { value: "oldest", label: "Oldest first" },
+  { value: "price_asc", label: "Price: low to high" },
+  { value: "price_desc", label: "Price: high to low" },
+];
+
+function buildQuery(
+  base: Record<string, string>,
+  overrides: Record<string, string | undefined>,
+): string {
+  const merged = { ...base, ...overrides };
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(merged)) {
+    if (v) params.set(k, v);
+  }
+  const qs = params.toString();
+  return qs ? `/listings?${qs}` : "/listings";
+}
+
 export default async function ListingsPage({
   searchParams,
 }: {
@@ -23,6 +47,8 @@ export default async function ListingsPage({
     trade?: string;
     location?: string;
     season?: string;
+    sort?: string;
+    page?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -31,6 +57,8 @@ export default async function ListingsPage({
   const trade = params.trade ?? "";
   const location = params.location?.trim() ?? "";
   const inSeason = params.season === "now";
+  const sort = (params.sort ?? "newest") as SortKey;
+  const page = Math.max(1, Number(params.page) || 1);
 
   const where: Prisma.ListingWhereInput = { status: "ACTIVE" };
 
@@ -57,12 +85,28 @@ export default async function ListingsPage({
     ];
   }
 
-  const listings = await db.listing.findMany({
-    where,
-    include: { variety: true, user: true, photos: { orderBy: { sortOrder: "asc" } } },
-    orderBy: { createdAt: "desc" },
-    take: 100,
-  });
+  const orderBy: Prisma.ListingOrderByWithRelationInput[] =
+    sort === "price_asc"
+      ? [{ tradeOnly: "asc" }, { pricePence: "asc" }]
+      : sort === "price_desc"
+        ? [{ tradeOnly: "asc" }, { pricePence: "desc" }]
+        : sort === "oldest"
+          ? [{ createdAt: "asc" }]
+          : [{ createdAt: "desc" }];
+
+  const [listings, total] = await Promise.all([
+    db.listing.findMany({
+      where,
+      include: { variety: true, user: true, photos: { orderBy: { sortOrder: "asc" } } },
+      orderBy,
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+    db.listing.count({ where }),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const base = { q, type, trade, location, season: params.season ?? "", sort };
 
   return (
     <div className="space-y-6">
@@ -121,7 +165,7 @@ export default async function ListingsPage({
             In season now
           </label>
         </div>
-        <div className="sm:col-span-2 lg:col-span-5">
+        <div className="flex flex-wrap items-center gap-3 sm:col-span-2 lg:col-span-5">
           <button
             type="submit"
             className="rounded-md bg-green-800 px-4 py-2 text-sm text-white"
@@ -130,11 +174,40 @@ export default async function ListingsPage({
           </button>
           <Link
             href="/listings"
-            className="ml-2 text-sm text-gray-500 hover:text-green-700"
+            className="text-sm text-gray-500 hover:text-green-700"
           >
             Clear
-          </Link>        </div>
+          </Link>
+          <span className="text-sm text-gray-500">
+            {total} result{total === 1 ? "" : "s"}
+          </span>
+        </div>
       </form>
+
+      <div className="flex items-center justify-between">
+        <form method="GET" action="/listings" className="flex items-center gap-2 text-sm">
+          <input type="hidden" name="q" value={q} />
+          <input type="hidden" name="type" value={type} />
+          <input type="hidden" name="trade" value={trade} />
+          <input type="hidden" name="location" value={location} />
+          {params.season && <input type="hidden" name="season" value={params.season} />}
+          <label className="text-gray-500">Sort</label>
+          <select
+            name="sort"
+            defaultValue={sort}
+            className="rounded-md border border-gray-300 px-3 py-1.5"
+          >
+            {sortOptions.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+          <button className="rounded-md border border-gray-300 px-3 py-1.5 text-gray-700">
+            Apply
+          </button>
+        </form>
+      </div>
 
       {listings.length === 0 ? (
         <p className="text-gray-500">No listings match your filters.</p>
@@ -209,6 +282,30 @@ export default async function ListingsPage({
             </li>
           ))}
         </ul>
+      )}
+
+      {totalPages > 1 && (
+        <nav className="flex items-center justify-center gap-2 text-sm">
+          {page > 1 && (
+            <Link
+              href={buildQuery(base, { page: String(page - 1) })}
+              className="rounded-md border border-gray-300 px-3 py-1.5 text-gray-700"
+            >
+              ← Previous
+            </Link>
+          )}
+          <span className="text-gray-500">
+            Page {page} of {totalPages}
+          </span>
+          {page < totalPages && (
+            <Link
+              href={buildQuery(base, { page: String(page + 1) })}
+              className="rounded-md border border-gray-300 px-3 py-1.5 text-gray-700"
+            >
+              Next →
+            </Link>
+          )}
+        </nav>
       )}
     </div>
   );

@@ -12,6 +12,17 @@ export default async function Header() {
     ? await db.notification.count({ where: { userId: user.id, read: false } })
     : 0;
 
+  const unreadMessages = user
+    ? await db.message.count({ where: { recipientId: user.id, read: false } })
+    : 0;
+
+  const isAdmin = user
+    ? (await db.user.findUnique({
+        where: { id: user.id },
+        select: { role: true },
+      }))?.role === "ADMIN"
+    : false;
+
   return (
     <header className="border-b border-gray-200 bg-white">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
@@ -48,10 +59,20 @@ export default async function Header() {
             </Link>
             <Link href="/messages" className="text-gray-700 hover:text-green-800">
               Messages
+              {unreadMessages > 0 && (
+                <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-xs text-white">
+                  {unreadMessages}
+                </span>
+              )}
             </Link>
             {user && (
               <Link href="/profile" className="text-gray-700 hover:text-green-800">
                 Profile
+              </Link>
+            )}
+            {isAdmin && (
+              <Link href="/admin" className="text-gray-700 hover:text-purple-800">
+                Admin
               </Link>
             )}
           </nav>

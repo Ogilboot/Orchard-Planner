@@ -44,6 +44,71 @@ export async function createRecord(formData: FormData): Promise<void> {
   redirect(`/records/${record.id}`);
 }
 
+export async function updateRecord(formData: FormData): Promise<void> {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) redirect("/login");
+
+  const id = s(formData.get("id"));
+  const record = await db.plantRecord.findUnique({ where: { id } });
+  if (!record || record.userId !== session.user.id) redirect("/records");
+
+  const varietyId = s(formData.get("varietyId")) || null;
+  const rootstock = s(formData.get("rootstock")) || null;
+  const status = (s(formData.get("status")) || "PERSONAL") as PlantStatus;
+
+  if (!varietyId && !rootstock) {
+    redirect(`/records/${id}/edit?error=${encodeURIComponent("Choose a variety or enter a rootstock.")}`);
+  }
+
+  await db.plantRecord.update({
+    where: { id },
+    data: {
+      varietyId,
+      rootstock,
+      rootstockSource: s(formData.get("rootstockSource")) || null,
+      scionSource: s(formData.get("scionSource")) || null,
+      sourceListingId: s(formData.get("sourceListingId")) || null,
+      graftDate: s(formData.get("graftDate")) ? new Date(s(formData.get("graftDate"))) : null,
+      location: s(formData.get("location")) || null,
+      status: statuses.includes(status) ? status : "PERSONAL",
+      notes: s(formData.get("notes")) || null,
+    },
+  });
+
+  redirect(`/records/${id}`);
+}
+
+export async function deleteRecord(formData: FormData): Promise<void> {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) redirect("/login");
+
+  const id = s(formData.get("id"));
+  const record = await db.plantRecord.findUnique({ where: { id } });
+  if (!record || record.userId !== session.user.id) redirect("/records");
+
+  await db.plantRecord.delete({ where: { id } });
+
+  revalidatePath("/records");
+  redirect("/records");
+}
+
+export async function deleteNote(formData: FormData): Promise<void> {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) redirect("/login");
+
+  const id = s(formData.get("id"));
+  const note = await db.plantNote.findUnique({
+    where: { id },
+    include: { record: { select: { id: true, userId: true } } },
+  });
+  if (!note || note.record.userId !== session.user.id) redirect("/records");
+
+  await db.plantNote.delete({ where: { id } });
+
+  revalidatePath(`/records/${note.record.id}`);
+  redirect(`/records/${note.record.id}`);
+}
+
 export async function addNote(formData: FormData): Promise<void> {
   const session = await getServerSession(authOptions);
   if (!session?.user) redirect("/login");

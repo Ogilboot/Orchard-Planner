@@ -49,3 +49,15 @@ export async function sendReply(formData: FormData): Promise<void> {
 
   revalidatePath("/messages");
 }
+
+export async function markAllMessagesRead(): Promise<void> {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return;
+
+  await db.message.updateMany({
+    where: { recipientId: session.user.id, read: false },
+    data: { read: true },
+  });
+
+  revalidatePath("/messages");
+}

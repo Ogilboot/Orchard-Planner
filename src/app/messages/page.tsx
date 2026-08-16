@@ -2,6 +2,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/get-user";
 import { sendReply } from "@/lib/actions/messages";
+import MarkMessagesRead from "@/components/MarkMessagesRead";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +68,7 @@ export default async function MessagesPage() {
 
   return (
     <div className="space-y-4">
+      <MarkMessagesRead />
       <h1 className="text-2xl font-bold">Messages</h1>
 
       {threads.length === 0 ? (

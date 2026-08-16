@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/get-user";
-import { addNote } from "@/lib/actions/records";
+import { addNote, deleteNote, deleteRecord } from "@/lib/actions/records";
 
 export const dynamic = "force-dynamic";
 
@@ -64,12 +64,30 @@ export default async function RecordDetailPage({
         <Link href="/records" className="text-sm text-green-700 hover:underline">
           ← Back to records
         </Link>
-        <h1 className="mt-1 text-3xl font-bold">
-          {record.variety?.commonName ?? "Unnamed plant"}
-        </h1>
-        {record.variety?.species && (
-          <p className="text-gray-500">{record.variety.species}</p>
-        )}
+        <div className="mt-1 flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-3xl font-bold">
+              {record.variety?.commonName ?? "Unnamed plant"}
+            </h1>
+            {record.variety?.species && (
+              <p className="text-gray-500">{record.variety.species}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/records/${record.id}/edit`}
+              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700"
+            >
+              Edit
+            </Link>
+            <form action={deleteRecord}>
+              <input type="hidden" name="id" value={record.id} />
+              <button className="rounded-md border border-red-200 px-3 py-1.5 text-sm text-red-600">
+                Delete
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -114,7 +132,13 @@ export default async function RecordDetailPage({
                   <span className="font-medium uppercase tracking-wide">
                     {kindLabels[n.kind] ?? n.kind}
                   </span>
-                  <span>{n.notedAt.toLocaleDateString()}</span>
+                  <div className="flex items-center gap-2">
+                    <span>{n.notedAt.toLocaleDateString()}</span>
+                    <form action={deleteNote}>
+                      <input type="hidden" name="id" value={n.id} />
+                      <button className="text-gray-400 hover:text-red-600">Remove</button>
+                    </form>
+                  </div>
                 </div>
                 <p className="mt-1">
                   {n.note}

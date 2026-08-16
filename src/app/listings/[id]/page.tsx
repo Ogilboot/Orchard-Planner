@@ -31,6 +31,13 @@ export default async function ListingDetailPage({
   });
   if (!listing) notFound();
 
+  const similar = await db.listing.findMany({
+    where: { varietyId: listing.varietyId, status: "ACTIVE", id: { not: listing.id } },
+    include: { user: true, photos: { orderBy: { sortOrder: "asc" } } },
+    orderBy: { createdAt: "desc" },
+    take: 4,
+  });
+
   const user = await getCurrentUser();
   const isOwner = user?.id === listing.userId;
 
@@ -191,6 +198,48 @@ export default async function ListingDetailPage({
           </Link>
         </div>
       </div>
+
+      {similar.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-xl font-semibold">
+            More {listing.variety.commonName} listings
+          </h2>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {similar.map((s) => (
+              <li
+                key={s.id}
+                className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3"
+              >
+                {s.photos[0] && (
+                  <img
+                    src={s.photos[0].url}
+                    alt=""
+                    className="h-14 w-14 shrink-0 rounded-md object-cover"
+                  />
+                )}
+                <div className="min-w-0 flex-1">
+                  <Link
+                    href={`/listings/${s.id}`}
+                    className="block truncate font-medium text-green-800 hover:underline"
+                  >
+                    {s.user.name ?? s.user.email}
+                  </Link>
+                  <span className="text-sm capitalize text-gray-500">
+                    {s.type.replaceAll("_", " ").toLowerCase()}
+                  </span>
+                </div>
+                <span className="shrink-0 text-sm font-semibold">
+                  {s.tradeOnly
+                    ? "Trade"
+                    : s.pricePence != null
+                      ? `£${(s.pricePence / 100).toFixed(2)}`
+                      : "—"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }
