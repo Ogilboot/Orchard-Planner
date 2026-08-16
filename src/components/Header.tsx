@@ -49,6 +49,11 @@ export default async function Header() {
             <Link href="/messages" className="text-gray-700 hover:text-green-800">
               Messages
             </Link>
+            {user && (
+              <Link href="/profile" className="text-gray-700 hover:text-green-800">
+                Profile
+              </Link>
+            )}
           </nav>
         </div>
         <div className="flex items-center gap-4 text-sm">
@@ -65,7 +70,7 @@ export default async function Header() {
             )}
           </Link>
           <AuthControls
-            user={user ? { name: user.name, email: user.email } : null}
+            user={user ? { id: user.id, name: user.name, email: user.email } : null}
           />
         </div>
       </div>

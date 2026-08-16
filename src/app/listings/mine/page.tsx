@@ -2,6 +2,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/get-user";
 import { addListingPhoto, removeListingPhoto } from "@/lib/actions/listingPhotos";
+import { deleteListing, setListingStatus } from "@/lib/actions/listings";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,54 @@ export default async function MyListingsPage() {
                 <span className="text-sm text-gray-500">
                   {l.status} · {l.photos.length}/{4} photos
                 </span>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+                <Link
+                  href={`/listings/${l.id}`}
+                  className="rounded-md border border-gray-300 px-3 py-1.5 text-gray-700 hover:bg-gray-50"
+                >
+                  View
+                </Link>
+                <Link
+                  href={`/listings/${l.id}/edit`}
+                  className="rounded-md border border-gray-300 px-3 py-1.5 text-gray-700 hover:bg-gray-50"
+                >
+                  Edit
+                </Link>
+                {l.status !== "ACTIVE" && (
+                  <form action={setListingStatus}>
+                    <input type="hidden" name="id" value={l.id} />
+                    <input type="hidden" name="status" value="ACTIVE" />
+                    <button className="rounded-md border border-green-800 px-3 py-1.5 text-green-800">
+                      Relist
+                    </button>
+                  </form>
+                )}
+                {l.status === "ACTIVE" && (
+                  <>
+                    <form action={setListingStatus}>
+                      <input type="hidden" name="id" value={l.id} />
+                      <input type="hidden" name="status" value="SOLD" />
+                      <button className="rounded-md border border-gray-300 px-3 py-1.5 text-gray-700">
+                        Mark sold
+                      </button>
+                    </form>
+                    <form action={setListingStatus}>
+                      <input type="hidden" name="id" value={l.id} />
+                      <input type="hidden" name="status" value="EXPIRED" />
+                      <button className="rounded-md border border-gray-300 px-3 py-1.5 text-gray-700">
+                        Mark expired
+                      </button>
+                    </form>
+                  </>
+                )}
+                <form action={deleteListing}>
+                  <input type="hidden" name="id" value={l.id} />
+                  <button className="rounded-md border border-red-200 px-3 py-1.5 text-red-600">
+                    Delete
+                  </button>
+                </form>
               </div>
 
               {l.photos.length > 0 && (

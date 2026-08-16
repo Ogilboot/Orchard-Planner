@@ -128,13 +128,12 @@ export default async function ListingsPage({
           >
             Search
           </button>
-          <a
+          <Link
             href="/listings"
             className="ml-2 text-sm text-gray-500 hover:text-green-700"
           >
             Clear
-          </a>
-        </div>
+          </Link>        </div>
       </form>
 
       {listings.length === 0 ? (
@@ -200,6 +199,12 @@ export default async function ListingsPage({
                 <div className="mt-1 text-xs text-gray-500">
                   {l.quantity} available
                 </div>
+                <Link
+                  href={`/listings/${l.id}`}
+                  className="mt-2 inline-block text-sm text-green-700 hover:underline"
+                >
+                  View →
+                </Link>
               </div>
             </li>
           ))}

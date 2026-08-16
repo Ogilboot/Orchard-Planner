@@ -28,3 +28,24 @@ export async function sendMessage(formData: FormData): Promise<void> {
 
   revalidatePath("/messages");
 }
+
+export async function sendReply(formData: FormData): Promise<void> {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) redirect("/login");
+
+  const recipientId = String(formData.get("recipientId") || "");
+  const body = String(formData.get("body") || "").trim();
+  const listingId = String(formData.get("listingId") || "") || null;
+  if (!recipientId || !body || recipientId === session.user.id) return;
+
+  await db.message.create({
+    data: {
+      senderId: session.user.id,
+      recipientId,
+      listingId,
+      body,
+    },
+  });
+
+  revalidatePath("/messages");
+}

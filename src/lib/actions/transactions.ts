@@ -84,6 +84,13 @@ export async function setTransactionStatus(formData: FormData): Promise<void> {
 
   await db.transaction.update({ where: { id }, data: { status } });
 
+  if (status === "COMPLETED") {
+    await db.listing.update({
+      where: { id: tx.listingId },
+      data: { status: "SOLD" },
+    });
+  }
+
   if (status === "ACCEPTED" || status === "COMPLETED") {
     await db.notification.create({
       data: {

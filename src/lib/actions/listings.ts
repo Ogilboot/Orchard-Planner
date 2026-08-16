@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { isAcceptedPhoto, MAX_LISTING_PHOTOS, savePhoto } from "@/lib/photo";
+import { deletePhotoFile, isAcceptedPhoto, MAX_LISTING_PHOTOS, savePhoto } from "@/lib/photo";
 
 const materialTypes = [
   "SCION_WOOD",
@@ -124,4 +124,124 @@ export async function createListing(formData: FormData): Promise<void> {
   revalidatePath("/varieties");
   revalidatePath(`/varieties/${data.varietyId}`);
   redirect(`/varieties/${data.varietyId}`);
+}
+
+export async function updateListing(formData: FormData): Promise<void> {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) redirect("/login");
+
+  const id = String(formData.get("id") || "");
+  const listing = await db.listing.findUnique({ where: { id } });
+  if (!listing || listing.userId !== session.user.id) redirect("/listings/mine");
+
+  const tradeOnly = formData.get("tradeOnly") === "on";
+  const priceStr = formData.get("price");
+  const price = priceStr ? Number(String(priceStr)) : undefined;
+
+  const parsed = schema.safeParse({
+    varietyId: formData.get("varietyId"),
+    type: formData.get("type"),
+    quantity: formData.get("quantity"),
+    tradeOnly,
+    price,
+    location: formData.get("location") || undefined,
+    description: formData.get("description") || undefined,
+    availabilityStart: formData.get("availabilityStart") || undefined,
+    availabilityEnd: formData.get("availabilityEnd") || undefined,
+  });
+
+  if (!parsed.success) {
+    const message = parsed.error.issues.map((i) => i.message).join(", ");
+    redirect(`/listings/${id}/edit?error=${encodeURIComponent(message)}`);
+  }
+
+  const data = parsed.data;
+  if (!tradeOnly && data.price === undefined) {
+    redirect(
+      `/listings/${id}/edit?error=${encodeURIComponent(
+        "Price is required unless the listing is trade-only.",
+      )}`,
+    );
+  }
+
+  const pricePence =
+    tradeOnly || data.price === undefined ? null : Math.round(data.price * 100);
+
+  await db.listing.update({
+    where: { id },
+    data: {
+      varietyId: data.varietyId,
+      type: data.type,
+      quantity: data.quantity,
+      tradeOnly,
+      pricePence,
+      location: data.location || null,
+      description: data.description || null,
+      availabilityStart: data.availabilityStart ? new Date(data.availabilityStart) : null,
+      availabilityEnd: data.availabilityEnd ? new Date(data.availabilityEnd) : null,
+    },
+  });
+
+  revalidatePath("/listings");
+  revalidatePath("/listings/mine");
+  revalidatePath(`/listings/${id}`);
+  revalidatePath(`/varieties/${data.varietyId}`);
+  redirect("/listings/mine");
+}
+
+export async function setListingStatus(formData: FormData): Promise<void> {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) redirect("/login");
+
+  const id = String(formData.get("id") || "");
+  const status = String(formData.get("status") || "") as "ACTIVE" | "SOLD" | "EXPIRED";
+  if (!["ACTIVE", "SOLD", "EXPIRED"].includes(status)) redirect("/listings/mine");
+
+  const listing = await db.listing.findUnique({ where: { id } });
+  if (!listing || listing.userId !== session.user.id) redirect("/listings/mine");
+
+  await db.listing.update({ where: { id }, data: { status } });
+
+  revalidatePath("/listings");
+  revalidatePath("/listings/mine");
+  revalidatePath(`/listings/${id}`);
+  revalidatePath(`/varieties/${listing.varietyId}`);
+  revalidatePath(`/users/${listing.userId}`);
+  redirect("/listings/mine");
+}
+
+export async function deleteListing(formData: FormData): Promise<void> {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) redirect("/login");
+
+  const id = String(formData.get("id") || "");
+  const listing = await db.listing.findUnique({
+    where: { id },
+    include: { photos: true },
+  });
+  if (!listing || listing.userId !== session.user.id) redirect("/listings/mine");
+
+  const transactions = await db.transaction.findMany({
+    where: { listingId: id },
+    select: { id: true },
+  });
+
+  if (transactions.length > 0) {
+    await db.review.deleteMany({
+      where: { transactionId: { in: transactions.map((t) => t.id) } },
+    });
+    await db.transaction.deleteMany({ where: { listingId: id } });
+  }
+
+  for (const photo of listing.photos) {
+    await deletePhotoFile(photo.url);
+  }
+
+  await db.listing.delete({ where: { id } });
+
+  revalidatePath("/listings");
+  revalidatePath("/listings/mine");
+  revalidatePath(`/varieties/${listing.varietyId}`);
+  revalidatePath(`/users/${listing.userId}`);
+  redirect("/listings/mine");
 }

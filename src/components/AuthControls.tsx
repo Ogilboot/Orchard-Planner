@@ -6,7 +6,7 @@ import { signOut } from "next-auth/react";
 export default function AuthControls({
   user,
 }: {
-  user: { name?: string | null; email?: string | null } | null;
+  user: { id?: string; name?: string | null; email?: string | null } | null;
 }) {
   if (!user) {
     return (
@@ -18,7 +18,13 @@ export default function AuthControls({
 
   return (
     <div className="flex items-center gap-3">
-      <span className="text-gray-500">{user.name ?? user.email}</span>
+      {user.id ? (
+        <Link href={`/users/${user.id}`} className="text-gray-500 hover:text-green-800">
+          {user.name ?? user.email}
+        </Link>
+      ) : (
+        <span className="text-gray-500">{user.name ?? user.email}</span>
+      )}
       <button
         onClick={() => signOut()}
         className="text-gray-700 hover:text-green-800"

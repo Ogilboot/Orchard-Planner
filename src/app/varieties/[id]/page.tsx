@@ -116,13 +116,21 @@ export default async function VarietyDetailPage({
                       <span className="ml-2 text-sm text-gray-500">· {l.location}</span>
                     )}
                   </div>
-                  <span className="font-semibold">
-                    {l.tradeOnly
-                      ? "Trade only"
-                      : l.pricePence != null
-                        ? `£${(l.pricePence / 100).toFixed(2)}`
-                        : "—"}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <Link
+                      href={`/listings/${l.id}`}
+                      className="text-sm text-green-700 hover:underline"
+                    >
+                      View listing →
+                    </Link>
+                    <span className="font-semibold">
+                      {l.tradeOnly
+                        ? "Trade only"
+                        : l.pricePence != null
+                          ? `£${(l.pricePence / 100).toFixed(2)}`
+                          : "—"}
+                    </span>
+                  </div>
                 </div>
                 {l.description && (
                   <p className="mt-2 text-sm text-gray-600">{l.description}</p>
