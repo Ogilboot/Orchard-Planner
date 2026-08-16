@@ -5,6 +5,11 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
+import {
+  deleteVarietyFromIndex,
+  indexVariety,
+  rebuildVarietyIndex,
+} from "@/lib/fts";
 
 const varietySchema = z.object({
   commonName: z.string().trim().min(1).max(200),
@@ -92,9 +97,11 @@ export async function createVariety(formData: FormData): Promise<void> {
   const data = toData(parsed.data);
   const { synonyms, ...fields } = data;
 
-  await db.variety.create({
+  const created = await db.variety.create({
     data: { ...fields, synonyms: { create: synonyms.map((name) => ({ name })) } },
   });
+
+  await indexVariety({ ...created, synonyms });
 
   revalidatePath("/admin/varieties");
   revalidatePath("/varieties");
@@ -116,13 +123,15 @@ export async function updateVariety(formData: FormData): Promise<void> {
   const data = toData(parsed.data);
   const { synonyms, ...fields } = data;
 
-  await db.variety.update({
+  const updated = await db.variety.update({
     where: { id },
     data: {
       ...fields,
       synonyms: { deleteMany: {}, create: synonyms.map((name) => ({ name })) },
     },
   });
+
+  await indexVariety({ ...updated, synonyms });
 
   revalidatePath("/admin/varieties");
   revalidatePath("/varieties");
@@ -146,6 +155,8 @@ export async function deleteVariety(formData: FormData): Promise<void> {
   }
 
   await db.variety.delete({ where: { id } });
+
+  await deleteVarietyFromIndex(id);
 
   revalidatePath("/admin/varieties");
   revalidatePath("/varieties");
@@ -249,6 +260,8 @@ export async function importVarieties(formData: FormData): Promise<void> {
       created++;
     }
   }
+
+  await rebuildVarietyIndex();
 
   revalidatePath("/varieties");
   redirect(

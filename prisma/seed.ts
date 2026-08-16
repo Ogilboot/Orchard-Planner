@@ -344,6 +344,39 @@ async function main() {
     bulkCount++;
   }
 
+  console.log("Building full-text search index…");
+  await db.$executeRawUnsafe(`
+    CREATE VIRTUAL TABLE IF NOT EXISTS variety_fts USING fts5(
+      id UNINDEXED,
+      commonName,
+      species,
+      synonyms,
+      notes,
+      tokenize = 'unicode61'
+    );
+  `);
+  await db.$executeRawUnsafe("DELETE FROM variety_fts");
+  const allVarieties = await db.variety.findMany({ include: { synonyms: true } });
+  for (const v of allVarieties) {
+    const synonyms = v.synonyms.map((s) => s.name).join(" ");
+    const notes = [
+      v.harvestWindow,
+      v.flavorNotes,
+      v.originNotes,
+      v.diseaseResistanceNotes,
+    ]
+      .filter(Boolean)
+      .join(" ");
+    await db.$executeRawUnsafe(
+      "INSERT INTO variety_fts(id, commonName, species, synonyms, notes) VALUES (?, ?, ?, ?, ?)",
+      v.id,
+      v.commonName,
+      v.species ?? "",
+      synonyms,
+      notes,
+    );
+  }
+
   const passwordHash = await bcrypt.hash("password123", 10);
 
   console.log("Seeding rootstocks…");

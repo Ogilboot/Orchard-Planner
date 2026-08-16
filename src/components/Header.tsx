@@ -92,6 +92,14 @@ export default async function Header() {
           </nav>
         </div>
         <div className="flex items-center gap-4 text-sm">
+          <form method="GET" action="/search" className="hidden sm:block">
+            <input
+              type="text"
+              name="q"
+              placeholder="Search…"
+              className="w-40 rounded-md border border-gray-300 px-3 py-1.5 text-sm"
+            />
+          </form>
           <UnreadIndicator
             initialNotifications={unread}
             initialMessages={unreadMessages}

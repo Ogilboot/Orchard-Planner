@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/get-user";
 import { saveSearch } from "@/lib/actions/saved-search";
 import { buildSearchHref } from "@/lib/search";
 import { formatListingPrice, formatMaterialType } from "@/lib/price";
+import { searchVarieties } from "@/lib/fts";
 
 export const dynamic = "force-dynamic";
 
@@ -61,13 +62,22 @@ export default async function ListingsPage({
   const where: Prisma.ListingWhereInput = { status: "ACTIVE" };
 
   if (q) {
-    where.variety = {
-      OR: [
-        { commonName: { contains: q } },
-        { species: { contains: q } },
-        { synonyms: { some: { name: { contains: q } } } },
-      ],
-    };
+    const matches = await searchVarieties(q, 200);
+    if (matches.length > 0) {
+      where.OR = [
+        { varietyId: { in: matches.map((m) => m.id) } },
+        { description: { contains: q } },
+        { location: { contains: q } },
+      ];
+    } else {
+      where.variety = {
+        OR: [
+          { commonName: { contains: q } },
+          { species: { contains: q } },
+          { synonyms: { some: { name: { contains: q } } } },
+        ],
+      };
+    }
   }
   if (materialTypes.some((m) => m.value === type)) {
     where.type = type as MaterialType;

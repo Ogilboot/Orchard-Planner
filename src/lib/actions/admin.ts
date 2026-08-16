@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { rebuildVarietyIndex } from "@/lib/fts";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -43,4 +44,13 @@ export async function setUserRole(formData: FormData): Promise<void> {
   await db.user.update({ where: { id: userId }, data: { role } });
 
   revalidatePath("/admin");
+}
+
+export async function rebuildSearchIndex(): Promise<void> {
+  await requireAdmin();
+
+  const count = await rebuildVarietyIndex();
+
+  revalidatePath("/admin");
+  redirect(`/admin?ok=${encodeURIComponent(`Search index rebuilt (${count} varieties).`)}`);
 }

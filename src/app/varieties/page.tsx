@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/get-user";
 import { buildSearchHref } from "@/lib/search";
+import { searchVarieties } from "@/lib/fts";
 
 export const dynamic = "force-dynamic";
 
@@ -38,12 +39,19 @@ export default async function VarietiesPage({
   const page = Math.max(1, Number(params.page) || 1);
 
   const where: Prisma.VarietyWhereInput = {};
+  let rankMap = new Map<string, number>();
   if (query) {
-    where.OR = [
-      { commonName: { contains: query } },
-      { species: { contains: query } },
-      { synonyms: { some: { name: { contains: query } } } },
-    ];
+    const matches = await searchVarieties(query, 200);
+    if (matches.length > 0) {
+      rankMap = new Map(matches.map((m, i) => [m.id, i]));
+      where.id = { in: matches.map((m) => m.id) };
+    } else {
+      where.OR = [
+        { commonName: { contains: query } },
+        { species: { contains: query } },
+        { synonyms: { some: { name: { contains: query } } } },
+      ];
+    }
   }
   if (species) where.species = species;
   if (zone) where.hardinessZone = { contains: zone };
@@ -55,15 +63,12 @@ export default async function VarietiesPage({
     };
   }
 
-  const [varieties, total, speciesList, zoneList, groups, user] = await Promise.all([
+  const [allVarieties, speciesList, zoneList, groups, user] = await Promise.all([
     db.variety.findMany({
       where,
       include: { _count: { select: { listings: true } } },
       orderBy: { commonName: "asc" },
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
     }),
-    db.variety.count({ where }),
     db.variety.findMany({
       where: { species: { not: null } },
       select: { species: true },
@@ -84,6 +89,15 @@ export default async function VarietiesPage({
     getCurrentUser(),
   ]);
 
+  let varieties = allVarieties;
+  if (rankMap.size > 0) {
+    varieties = [...allVarieties].sort(
+      (a, b) => (rankMap.get(a.id) ?? 999) - (rankMap.get(b.id) ?? 999),
+    );
+  }
+
+  const total = varieties.length;
+  const pageVarieties = varieties.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const base = {
     q: query,
@@ -200,7 +214,7 @@ export default async function VarietiesPage({
       </form>
 
       <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white">
-        {varieties.map((v) => (
+        {pageVarieties.map((v) => (
           <li key={v.id}>
             <Link
               href={`/varieties/${v.id}`}
@@ -219,7 +233,7 @@ export default async function VarietiesPage({
             </Link>
           </li>
         ))}
-        {varieties.length === 0 && (
+        {pageVarieties.length === 0 && (
           <li className="px-4 py-6 text-center text-gray-500">
             No varieties found{query ? ` for "${query}"` : ""}.
           </li>
