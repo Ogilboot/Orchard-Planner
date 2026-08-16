@@ -123,9 +123,9 @@ export default async function VarietiesPage({
             name="q"
             defaultValue={query}
             placeholder="Search by variety or synonym (e.g. Ashmead's Kernel)"
-            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2"
+            className="input w-full"
           />
-          <button type="submit" className="rounded-lg bg-green-800 px-4 py-2 text-white">
+          <button type="submit" className="btn bg-green-800 text-white hover:bg-green-700">
             Search
           </button>
         </div>
@@ -189,7 +189,7 @@ export default async function VarietiesPage({
           </div>
           <button
             type="submit"
-            className="rounded-md border border-gray-300 px-3 py-1.5 text-gray-700"
+            className="btn border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
           >
             Filter
           </button>
@@ -213,7 +213,7 @@ export default async function VarietiesPage({
         )}
       </form>
 
-      <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white">
+      <ul className="divide-y divide-gray-200 rounded-xl border border-gray-200 bg-white shadow-sm">
         {pageVarieties.map((v) => (
           <li key={v.id}>
             <Link

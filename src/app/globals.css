@@ -1,7 +1,58 @@
 @import "tailwindcss";
 
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+      Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.025em;
+  }
+
+  ::selection {
+    background-color: #bbf7d0;
+    color: #14532d;
+  }
+
+  a {
+    transition: color 0.15s ease;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .card {
+    @apply rounded-xl border border-gray-200 bg-white shadow-sm;
+  }
+
+  .input {
+    @apply rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600/20;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-gray-700;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+}
+
 @media print {
   header,
+  footer,
   aside {
     display: none !important;
   }

@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import AuthControls from "@/components/AuthControls";
 import UnreadIndicator from "@/components/UnreadIndicator";
+import NavLink from "@/components/NavLink";
 
 export default async function Header() {
   const session = await getServerSession(authOptions);
@@ -25,79 +26,47 @@ export default async function Header() {
     : false;
 
   return (
-    <header className="border-b border-gray-200 bg-white">
+    <header className="sticky top-0 z-30 border-b border-gray-200/70 bg-white/80 backdrop-blur">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-          <Link href="/" className="text-lg font-semibold text-green-800">
-            Orchard Planner
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <Link href="/" className="flex items-center gap-2">
+            <svg
+              viewBox="0 0 24 24"
+              className="h-7 w-7 text-green-700"
+              fill="currentColor"
+              aria-hidden
+            >
+              <path d="M12 2c1.5 4.5 4 7 8 8-4 1-6.5 3.5-8 8-1.5-4.5-4-7-8-8 4-1 6.5-3.5 8-8z" />
+            </svg>
+            <span className="text-lg font-semibold tracking-tight text-green-900">
+              Orchard Planner
+            </span>
           </Link>
-          <nav className="flex flex-wrap items-center gap-4 text-sm">
-            {user && (
-              <Link href="/dashboard" className="font-medium text-gray-700 hover:text-green-800">
-                Dashboard
-              </Link>
-            )}
-            <Link href="/varieties" className="text-gray-700 hover:text-green-800">
-              Varieties
-            </Link>
-            <Link href="/rootstocks" className="text-gray-700 hover:text-green-800">
-              Rootstocks
-            </Link>
-            <Link href="/listings" className="text-gray-700 hover:text-green-800">
-              Browse
-            </Link>
-            <Link href="/orchard" className="text-gray-700 hover:text-green-800">
-              My orchard
-            </Link>
-            <Link href="/records" className="text-gray-700 hover:text-green-800">
-              Records
-            </Link>
-            <Link href="/listings/new" className="text-gray-700 hover:text-green-800">
-              Sell / Trade
-            </Link>
-            {user && (
-              <Link href="/listings/mine" className="text-gray-700 hover:text-green-800">
-                My listings
-              </Link>
-            )}
-            <Link href="/transactions" className="text-gray-700 hover:text-green-800">
-              Transactions
-            </Link>
-            <Link href="/wantlist" className="text-gray-700 hover:text-green-800">
-              Want list
-            </Link>
-            {user && (
-              <Link href="/saved-searches" className="text-gray-700 hover:text-green-800">
-                Saved searches
-              </Link>
-            )}
-            {user && (
-              <Link href="/following" className="text-gray-700 hover:text-green-800">
-                Following
-              </Link>
-            )}
-            <Link href="/messages" className="text-gray-700 hover:text-green-800">
-              Messages
-            </Link>
-            {user && (
-              <Link href="/profile" className="text-gray-700 hover:text-green-800">
-                Profile
-              </Link>
-            )}
-            {isAdmin && (
-              <Link href="/admin" className="text-gray-700 hover:text-purple-800">
-                Admin
-              </Link>
-            )}
+          <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+            {user && <NavLink href="/dashboard">Dashboard</NavLink>}
+            <NavLink href="/varieties">Varieties</NavLink>
+            <NavLink href="/rootstocks">Rootstocks</NavLink>
+            <NavLink href="/listings">Browse</NavLink>
+            <NavLink href="/orchard">My orchard</NavLink>
+            <NavLink href="/records">Records</NavLink>
+            <NavLink href="/listings/new">Sell / Trade</NavLink>
+            {user && <NavLink href="/listings/mine">My listings</NavLink>}
+            <NavLink href="/transactions">Transactions</NavLink>
+            <NavLink href="/wantlist">Want list</NavLink>
+            <NavLink href="/messages">Messages</NavLink>
+            {user && <NavLink href="/saved-searches">Saved searches</NavLink>}
+            {user && <NavLink href="/following">Following</NavLink>}
+            {user && <NavLink href="/profile">Profile</NavLink>}
+            {isAdmin && <NavLink href="/admin">Admin</NavLink>}
           </nav>
         </div>
         <div className="flex items-center gap-4 text-sm">
-          <form method="GET" action="/search" className="hidden sm:block">
+          <form method="GET" action="/search" className="hidden md:block">
             <input
               type="text"
               name="q"
-              placeholder="Search…"
-              className="w-40 rounded-md border border-gray-300 px-3 py-1.5 text-sm"
+              placeholder="Search varieties…"
+              className="input w-48 py-1.5"
             />
           </form>
           <UnreadIndicator

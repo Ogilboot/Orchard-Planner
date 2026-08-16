@@ -32,43 +32,57 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="mx-auto max-w-sm space-y-4">
-      <h1 className="text-2xl font-bold">Sign in</h1>
+    <div className="mx-auto max-w-sm">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold">Sign in</h1>
+        <p className="mt-1 text-sm text-gray-500">Welcome back to Orchard Planner.</p>
+      </div>
 
-      <form
-        onSubmit={onSubmit}
-        className="space-y-3 rounded-lg border border-gray-200 bg-white p-6"
-      >
-        <input
-          type="email"
-          name="email"
-          required
-          placeholder="Email"
-          className="w-full rounded-md border border-gray-300 px-3 py-2"
-        />
-        <input
-          type="password"
-          name="password"
-          required
-          placeholder="Password"
-          className="w-full rounded-md border border-gray-300 px-3 py-2"
-        />
+      <form onSubmit={onSubmit} className="card mt-6 space-y-4 p-6">
+        <div>
+          <label className="label" htmlFor="email">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            name="email"
+            required
+            placeholder="you@example.com"
+            className="input mt-1 w-full"
+          />
+        </div>
+        <div>
+          <label className="label" htmlFor="password">
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            name="password"
+            required
+            placeholder="••••••••"
+            className="input mt-1 w-full"
+          />
+        </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button
           disabled={loading}
-          className="w-full rounded-lg bg-green-800 px-4 py-2 text-white disabled:opacity-50"
+          className="btn w-full bg-green-800 text-white hover:bg-green-700"
         >
           {loading ? "Signing in…" : "Sign in"}
         </button>
       </form>
 
-      <p className="text-sm text-gray-600">
+      <p className="mt-6 text-center text-sm text-gray-600">
         No account?{" "}
-        <Link href="/register" className="text-green-700 hover:underline">
+        <Link href="/register" className="font-medium text-green-700 hover:underline">
           Register
         </Link>
       </p>
-      <p className="text-xs text-gray-400">Demo account: demo@example.com / password123</p>
+      <p className="mt-2 text-center text-xs text-gray-400">
+        Demo account: demo@example.com / password123
+      </p>
     </div>
   );
 }

@@ -125,13 +125,13 @@ export default async function DashboardPage() {
         <div className="flex gap-2">
           <Link
             href="/listings/new"
-            className="rounded-lg bg-green-800 px-4 py-2 text-sm text-white"
+            className="btn bg-green-800 text-white hover:bg-green-700"
           >
             Post a listing
           </Link>
           <a
             href="/api/export/sales"
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700"
+            className="btn border border-gray-300 text-gray-700 hover:bg-gray-50"
           >
             Export sales
           </a>
@@ -140,7 +140,7 @@ export default async function DashboardPage() {
 
       <section className="grid gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {metrics.map(([label, value]) => (
-          <div key={label} className="rounded-lg border border-gray-200 bg-white p-4">
+          <div key={label} className="card p-4">
             <div className="text-xs uppercase tracking-wide text-gray-500">{label}</div>
             <div className="mt-1 text-xl font-semibold">{value}</div>
           </div>
@@ -148,13 +148,13 @@ export default async function DashboardPage() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
+        <div className="card p-4">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
             Listings created (last {DAYS} days)
           </h2>
           <Sparkline values={listingsSpark} />
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
+        <div className="card p-4">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
             Sales (last {DAYS} days)
           </h2>
@@ -163,7 +163,7 @@ export default async function DashboardPage() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
+        <div className="card p-4">
           <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
             Top varieties
           </h2>
@@ -183,7 +183,7 @@ export default async function DashboardPage() {
           )}
         </div>
 
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
+        <div className="card p-4">
           <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
             Recent reviews
           </h2>
@@ -205,7 +205,7 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <section className="rounded-lg border border-gray-200 bg-white p-4">
+      <section className="card p-4">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
           Recent transactions
         </h2>

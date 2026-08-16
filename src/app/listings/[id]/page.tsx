@@ -157,7 +157,7 @@ export default async function ListingDetailPage({
           {!user && (
             <Link
               href="/login"
-              className="block rounded-lg bg-green-800 px-4 py-2 text-center text-white"
+              className="btn w-full bg-green-800 text-white hover:bg-green-700"
             >
               Sign in to buy or message
             </Link>
@@ -166,7 +166,7 @@ export default async function ListingDetailPage({
           {user && isOwner && (
             <Link
               href={`/listings/${id}/edit`}
-              className="block rounded-lg border border-green-800 px-4 py-2 text-center text-green-800"
+              className="btn w-full border border-green-800 text-green-800 hover:bg-green-50"
             >
               Manage this listing
             </Link>
@@ -176,7 +176,7 @@ export default async function ListingDetailPage({
             <div className="space-y-2">
               <form action={requestTransaction}>
                 <input type="hidden" name="listingId" value={listing.id} />
-                <button className="w-full rounded-lg bg-green-800 px-4 py-2 text-white">
+                <button className="btn w-full bg-green-800 text-white hover:bg-green-700">
                   {listing.tradeOnly ? "Request trade" : "Buy / Request"}
                 </button>
               </form>
@@ -187,9 +187,9 @@ export default async function ListingDetailPage({
                   required
                   rows={3}
                   placeholder="Message the seller…"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  className="input w-full"
                 />
-                <button className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm">
+                <button className="btn w-full border border-gray-300 text-gray-700 hover:bg-gray-50">
                   Send message
                 </button>
               </form>
