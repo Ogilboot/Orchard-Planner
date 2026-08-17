@@ -59,3 +59,37 @@ jobs:
         env:
           CI: "true"
           E2E_WEB_SERVER_CMD: "npm run start"
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t orchard-planner .
+
+      - name: Run container
+        run: |
+          docker run -d --name orchard -p 3000:3000 \
+            -e DATABASE_URL=file:/app/prisma/dev.db \
+            -e NEXTAUTH_SECRET=0123456789abcdef0123456789abcdef0123456789abcdef \
+            -e NEXTAUTH_URL=http://localhost:3000 \
+            -e SEED_ON_START=true \
+            orchard-planner
+
+      - name: Smoke test
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:3000/ >/dev/null 2>&1; then
+              echo "container ready after ${i} attempts"
+              break
+            fi
+            sleep 2
+          done
+          curl -fsS http://localhost:3000/ | grep -q "Orchard Planner"
+          curl -fsS http://localhost:3000/rootstocks | grep -q "MM106"
+          echo "smoke test passed"
+
+      - name: Cleanup
+        if: always()
+        run: docker rm -f orchard
