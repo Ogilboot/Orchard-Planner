@@ -71,6 +71,11 @@ export default async function TransactionsPage() {
               amBuyer &&
               tx.amountPence != null &&
               tx.status === "ACCEPTED";
+            const sellerMissingPayments =
+              amBuyer &&
+              tx.amountPence != null &&
+              tx.status === "ACCEPTED" &&
+              !tx.seller.stripeAccountId;
 
             return (
               <li key={tx.id} className="rounded-lg border border-gray-200 bg-white p-4">
@@ -188,6 +193,13 @@ export default async function TransactionsPage() {
                         Pay with card
                       </button>
                     </form>
+                  )}
+
+                  {sellerMissingPayments && (
+                    <p className="text-sm text-amber-700">
+                      The seller hasn&apos;t set up payments yet — payment is unavailable until
+                      they do.
+                    </p>
                   )}
 
                   {canCancel && (

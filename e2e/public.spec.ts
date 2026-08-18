@@ -32,9 +32,8 @@ test("listings browse renders", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Browse listings" })).toBeVisible();
 });
 
-test("login page shows demo credentials", async ({ page }) => {
+test("login page renders sign-in form and password reset link", async ({ page }) => {
   await page.goto("/login");
-  await expect(
-    page.getByText("Demo account: demo@example.com / password123"),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+  await expect(page.getByText("Forgot password?")).toBeVisible();
 });

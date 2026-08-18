@@ -13,8 +13,13 @@ function daysAgo(n: number): Date {
   return new Date(Date.now() - n * 24 * 60 * 60 * 1000);
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ connect?: string }>;
+}) {
   const user = await getCurrentUser();
+  const { connect } = await searchParams;
 
   if (!user) {
     return (
@@ -145,6 +150,46 @@ export default async function DashboardPage() {
             <div className="mt-1 text-xl font-semibold">{value}</div>
           </div>
         ))}
+      </section>
+
+      <section className="card flex flex-wrap items-center justify-between gap-3 p-4">
+        <div>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+            Getting paid
+          </h2>
+          {user.stripeAccountId ? (
+            <p className="mt-1 text-sm text-gray-600">
+              Your Stripe account is connected. Buyers pay you directly and we take a small
+              platform fee.
+            </p>
+          ) : (
+            <p className="mt-1 text-sm text-gray-600">
+              Connect a Stripe account to receive card payments for your listings. Buyers pay you
+              directly; Orchard Planner takes a small platform fee on each sale.
+            </p>
+          )}
+          {connect === "ok" && (
+            <p className="mt-1 text-sm text-green-700">Stripe onboarding complete.</p>
+          )}
+          {connect === "refresh" && (
+            <p className="mt-1 text-sm text-amber-700">
+              Onboarding was paused — you can resume it any time.
+            </p>
+          )}
+        </div>
+        {user.stripeAccountId ? (
+          <form method="POST" action="/api/stripe/connect/login">
+            <button className="btn border border-gray-300 text-gray-700 hover:bg-gray-50">
+              Manage in Stripe
+            </button>
+          </form>
+        ) : (
+          <form method="POST" action="/api/stripe/connect">
+            <button className="btn bg-blue-700 text-white hover:bg-blue-600">
+              Connect payments
+            </button>
+          </form>
+        )}
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">

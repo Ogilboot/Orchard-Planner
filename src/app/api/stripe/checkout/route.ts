@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { platformFeeBps, stripeConfigured } from "@/lib/stripe";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -9,7 +10,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
 
-  if (!process.env.STRIPE_SECRET_KEY) {
+  if (!stripeConfigured()) {
     return NextResponse.json(
       {
         error:
@@ -27,7 +28,10 @@ export async function POST(req: Request) {
 
   const tx = await db.transaction.findUnique({
     where: { id: transactionId },
-    include: { listing: { include: { variety: true } } },
+    include: {
+      listing: { include: { variety: true } },
+      seller: { select: { stripeAccountId: true } },
+    },
   });
   if (!tx || tx.buyerId !== session.user.id) {
     return NextResponse.json({ error: "Transaction not found." }, { status: 404 });
@@ -35,11 +39,19 @@ export async function POST(req: Request) {
   if (tx.amountPence == null) {
     return NextResponse.json({ error: "This transaction has no price." }, { status: 400 });
   }
+  if (!tx.seller.stripeAccountId) {
+    return NextResponse.json(
+      { error: "The seller hasn't set up payments yet." },
+      { status: 400 },
+    );
+  }
 
   const total = tx.amountPence + (tx.postagePence ?? 0);
   if (total <= 0) {
     return NextResponse.json({ error: "Nothing to pay." }, { status: 400 });
   }
+
+  const feePence = Math.min(Math.round((total * platformFeeBps()) / 10000), total - 1);
 
   const base = process.env.NEXTAUTH_URL || "http://localhost:3000";
   const params = new URLSearchParams();
@@ -55,6 +67,10 @@ export async function POST(req: Request) {
   params.set("line_items[0][quantity]", "1");
   params.set("metadata[transactionId]", tx.id);
   params.set("client_reference_id", tx.id);
+  params.set("payment_intent_data[transfer_data][destination]", tx.seller.stripeAccountId);
+  if (feePence > 0) {
+    params.set("payment_intent_data[application_fee_amount]", String(feePence));
+  }
 
   const res = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",
