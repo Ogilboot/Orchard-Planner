@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
-import { buildAbsoluteUrl, sendPasswordResetEmail, sendVerificationEmail } from "@/lib/mail";
+import { buildAbsoluteUrl, sendPasswordResetEmail } from "@/lib/mail";
 
 const RESET_TOKEN_TTL = 60 * 60 * 1000;
 
