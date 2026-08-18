@@ -38,6 +38,11 @@ export const authOptions: NextAuthOptions = {
         const valid = await bcrypt.compare(credentials.password, user.passwordHash);
         if (!valid) return null;
 
+        if (!user.emailVerified) {
+          logger.warn({ email }, "login blocked for unverified email");
+          return null;
+        }
+
         resetRateLimit(`login:${email}`);
 
         return { id: user.id, email: user.email, name: user.name };

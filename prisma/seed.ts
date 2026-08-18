@@ -394,6 +394,7 @@ async function main() {
       bio: "Small independent nursery growing apples, pears, cobnuts and soft fruit. All scion wood cut to order during dormancy.",
       isVerifiedNursery: true,
       yearsActive: 8,
+      emailVerified: new Date(),
     },
   });
 
@@ -406,6 +407,7 @@ async function main() {
       bio: "Backyard fruit enthusiast restoring an old mixed orchard.",
       isVerifiedNursery: false,
       yearsActive: 4,
+      emailVerified: new Date(),
     },
   });
 
@@ -417,6 +419,7 @@ async function main() {
       role: "ADMIN",
       location: "UK",
       bio: "Site administrator.",
+      emailVerified: new Date(),
     },
   });
 
