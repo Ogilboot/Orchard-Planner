@@ -88,6 +88,16 @@ export default function Footer() {
                 Create an account
               </Link>
             </li>
+            <li>
+              <Link href="/terms" className="text-gray-600 hover:text-green-700">
+                Terms of Service
+              </Link>
+            </li>
+            <li>
+              <Link href="/privacy" className="text-gray-600 hover:text-green-700">
+                Privacy Policy
+              </Link>
+            </li>
           </ul>
         </div>
       </div>

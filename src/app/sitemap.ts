@@ -21,8 +21,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
   ]);
 
-  const staticRoutes = ["", "/varieties", "/rootstocks", "/listings", "/nurseries", "/search"].map(
-    (path) => ({
+  const staticRoutes = [
+    "",
+    "/varieties",
+    "/rootstocks",
+    "/listings",
+    "/nurseries",
+    "/search",
+    "/terms",
+    "/privacy",
+  ].map((path) => ({
       url: `${BASE}${path}`,
       changeFrequency: "weekly" as const,
       priority: 0.8,

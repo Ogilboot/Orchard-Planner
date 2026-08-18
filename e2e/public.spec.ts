@@ -37,3 +37,12 @@ test("login page renders sign-in form and password reset link", async ({ page })
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
   await expect(page.getByText("Forgot password?")).toBeVisible();
 });
+
+test("terms and privacy pages render and are linked in footer", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "Terms of Service" }).click();
+  await expect(page.getByRole("heading", { name: "Terms of Service" })).toBeVisible();
+
+  await page.goto("/privacy");
+  await expect(page.getByRole("heading", { name: "Privacy Policy" })).toBeVisible();
+});
