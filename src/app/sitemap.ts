@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 
 const BASE = process.env.NEXTAUTH_URL || "http://localhost:3000";
 
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [varieties, rootstocks, listings, users] = await Promise.all([
     db.variety.findMany({ select: { id: true, updatedAt: true } }),
