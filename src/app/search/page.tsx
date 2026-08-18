@@ -38,6 +38,7 @@ export default async function SearchPage({
       ? db.listing.findMany({
           where: {
             status: "ACTIVE",
+            user: { banned: false },
             OR: [
               { varietyId: { in: varietyIds } },
               { description: { contains: query } },

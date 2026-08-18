@@ -33,7 +33,7 @@ export default async function NurseriesPage({
   const location = params.location?.trim() ?? "";
   const page = Math.max(1, Number(params.page) || 1);
 
-  const where: Prisma.UserWhereInput = { listings: { some: {} } };
+  const where: Prisma.UserWhereInput = { listings: { some: {} }, banned: false };
 
   let rankMap = new Map<string, number>();
   if (query) {

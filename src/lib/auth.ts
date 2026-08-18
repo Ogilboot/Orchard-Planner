@@ -30,6 +30,10 @@ export const authOptions: NextAuthOptions = {
           where: { email },
         });
         if (!user?.passwordHash) return null;
+        if (user.banned) {
+          logger.warn({ email }, "login blocked for banned user");
+          return null;
+        }
 
         const valid = await bcrypt.compare(credentials.password, user.passwordHash);
         if (!valid) return null;
@@ -41,6 +45,20 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.sub = user.id;
+        return token;
+      }
+      if (token?.sub) {
+        const dbUser = await db.user.findUnique({
+          where: { id: token.sub },
+          select: { banned: true },
+        });
+        if (!dbUser || dbUser.banned) return {};
+      }
+      return token;
+    },
     async session({ session, token }) {
       if (session.user && token.sub) {
         session.user.id = token.sub;

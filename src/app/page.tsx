@@ -10,7 +10,7 @@ export default async function HomePage() {
 
   const [recentListings, popularVarieties, stats, ratedSellers] = await Promise.all([
     db.listing.findMany({
-      where: { status: "ACTIVE" },
+      where: { status: "ACTIVE", user: { banned: false } },
       include: { variety: true, user: true, photos: { orderBy: { sortOrder: "asc" } } },
       orderBy: { createdAt: "desc" },
       take: 6,
@@ -22,11 +22,11 @@ export default async function HomePage() {
     }),
     Promise.all([
       db.variety.count(),
-      db.listing.count({ where: { status: "ACTIVE" } }),
+      db.listing.count({ where: { status: "ACTIVE", user: { banned: false } } }),
       db.user.count(),
     ]),
     db.user.findMany({
-      where: { reviewsReceived: { some: {} } },
+      where: { reviewsReceived: { some: {} }, banned: false },
       include: {
         _count: { select: { listings: true } },
         reviewsReceived: { select: { rating: true } },

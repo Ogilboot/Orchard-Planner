@@ -2,7 +2,13 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/get-user";
 import { rebuildSearchIndex, setUserRole, setVerifiedStatus } from "@/lib/actions/admin";
-import { setReportStatus } from "@/lib/actions/reports";
+import {
+  adminDeleteListing,
+  adminDeleteReview,
+  setBanStatus,
+  setReportStatus,
+} from "@/lib/actions/reports";
+import ConfirmSubmit from "@/components/admin/ConfirmSubmit";
 
 export const dynamic = "force-dynamic";
 
@@ -147,6 +153,28 @@ export default async function AdminPage({
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
+                  {r.listing && (
+                    <form action={adminDeleteListing}>
+                      <input type="hidden" name="id" value={r.listing.id} />
+                      <ConfirmSubmit
+                        message="Delete this listing permanently? This cannot be undone."
+                        className="rounded-md border border-red-300 px-2 py-1 text-xs text-red-700"
+                      >
+                        Delete listing
+                      </ConfirmSubmit>
+                    </form>
+                  )}
+                  {r.review && (
+                    <form action={adminDeleteReview}>
+                      <input type="hidden" name="id" value={r.review.id} />
+                      <ConfirmSubmit
+                        message="Delete this review permanently? This cannot be undone."
+                        className="rounded-md border border-red-300 px-2 py-1 text-xs text-red-700"
+                      >
+                        Delete review
+                      </ConfirmSubmit>
+                    </form>
+                  )}
                   <form action={setReportStatus}>
                     <input type="hidden" name="id" value={r.id} />
                     <input type="hidden" name="status" value="RESOLVED" />
@@ -184,6 +212,11 @@ export default async function AdminPage({
                   {u.isVerifiedNursery && (
                     <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
                       Verified
+                    </span>
+                  )}
+                  {u.banned && (
+                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                      Banned
                     </span>
                   )}
                   {u.role === "ADMIN" && (
@@ -237,6 +270,21 @@ export default async function AdminPage({
                     {u.isVerifiedNursery ? "Unverify" : "Verify"}
                   </button>
                 </form>
+                {u.role === "USER" && (
+                  <form action={setBanStatus}>
+                    <input type="hidden" name="userId" value={u.id} />
+                    <input type="hidden" name="banned" value={u.banned ? "false" : "true"} />
+                    <button
+                      className={`rounded-md border px-2 py-1 text-xs ${
+                        u.banned
+                          ? "border-green-800 text-green-800"
+                          : "border-red-300 text-red-700"
+                      }`}
+                    >
+                      {u.banned ? "Unban" : "Ban"}
+                    </button>
+                  </form>
+                )}
               </div>
             </li>
           ))}

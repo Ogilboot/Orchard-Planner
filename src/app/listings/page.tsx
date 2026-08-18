@@ -59,7 +59,7 @@ export default async function ListingsPage({
   const sort = (params.sort ?? "newest") as SortKey;
   const page = Math.max(1, Number(params.page) || 1);
 
-  const where: Prisma.ListingWhereInput = { status: "ACTIVE" };
+  const where: Prisma.ListingWhereInput = { status: "ACTIVE", user: { banned: false } };
 
   if (q) {
     const matches = await searchVarieties(q, 200);

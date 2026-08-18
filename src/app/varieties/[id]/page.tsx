@@ -22,7 +22,7 @@ export default async function VarietyDetailPage({
     include: {
       synonyms: true,
       listings: {
-        where: { status: "ACTIVE" },
+        where: { status: "ACTIVE", user: { banned: false } },
         include: { user: true, photos: { orderBy: { sortOrder: "asc" } } },
         orderBy: { createdAt: "desc" },
       },

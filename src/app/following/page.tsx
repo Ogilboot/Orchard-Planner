@@ -26,7 +26,7 @@ export default async function FollowingPage() {
       following: {
         include: {
           listings: {
-            where: { status: "ACTIVE" },
+            where: { status: "ACTIVE", user: { banned: false } },
             include: { variety: true, photos: { orderBy: { sortOrder: "asc" } } },
             orderBy: { createdAt: "desc" },
             take: 10,

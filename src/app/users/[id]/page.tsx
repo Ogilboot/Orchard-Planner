@@ -20,17 +20,20 @@ function initials(name: string | null): string {
 
 export default async function UserProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ reported?: string }>;
 }) {
   const { id } = await params;
+  const { reported } = await searchParams;
   const viewer = await getCurrentUser();
 
   const user = await db.user.findUnique({
     where: { id },
     include: {
       listings: {
-        where: { status: "ACTIVE" },
+        where: { status: "ACTIVE", user: { banned: false } },
         include: { variety: true, photos: { orderBy: { sortOrder: "asc" } } },
         orderBy: { createdAt: "desc" },
         take: 30,
@@ -228,12 +231,31 @@ export default async function UserProfilePage({
                 </div>
                 {r.comment && <p className="mt-1 text-gray-600">{r.comment}</p>}
                 {viewer && viewer.id !== r.reviewerId && (
-                  <form action={reportReview} className="mt-2">
-                    <input type="hidden" name="reviewId" value={r.id} />
-                    <button className="text-xs text-gray-400 hover:text-red-600">
-                      Report
-                    </button>
-                  </form>
+                  <div className="mt-2">
+                    {reported && (
+                      <p className="mb-1 text-xs text-green-700">
+                        Thanks — this review has been reported.
+                      </p>
+                    )}
+                    <details className="group">
+                      <summary className="cursor-pointer text-xs text-gray-400 hover:text-red-600">
+                        Report
+                      </summary>
+                      <form action={reportReview} className="mt-1 space-y-1">
+                        <input type="hidden" name="reviewId" value={r.id} />
+                        <textarea
+                          name="reason"
+                          required
+                          rows={2}
+                          placeholder="Why are you reporting this review?"
+                          className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm"
+                        />
+                        <button className="rounded-md bg-red-700 px-3 py-1 text-xs text-white">
+                          Submit report
+                        </button>
+                      </form>
+                    </details>
+                  </div>
                 )}
               </li>
             ))}

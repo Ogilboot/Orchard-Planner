@@ -22,6 +22,9 @@ model User {
   hardinessZone     String?
   isVerifiedNursery Boolean       @default(false)
   yearsActive       Int?
+  banned            Boolean       @default(false)
+  emailVerified     DateTime?
+  stripeAccountId   String?
   role              Role          @default(USER)
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
@@ -41,6 +44,7 @@ model User {
   followers         Follow[]      @relation("Follower")
   savedSearches     SavedSearch[]
   reportsMade       Report[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model Variety {
@@ -389,6 +393,18 @@ model Report {
   review   Review?  @relation(fields: [reviewId], references: [id], onDelete: SetNull)
 
   @@index([status])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model ErrorEvent {

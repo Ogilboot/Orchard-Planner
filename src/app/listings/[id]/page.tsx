@@ -17,13 +17,16 @@ const statusLabels: Record<string, string> = {
 
 export default async function ListingDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ reported?: string }>;
 }) {
   const { id } = await params;
+  const { reported } = await searchParams;
 
   const listing = await db.listing.findUnique({
-    where: { id },
+    where: { id, user: { banned: false } },
     include: {
       variety: true,
       user: true,
@@ -34,7 +37,12 @@ export default async function ListingDetailPage({
   if (!listing) notFound();
 
   const similar = await db.listing.findMany({
-    where: { varietyId: listing.varietyId, status: "ACTIVE", id: { not: listing.id } },
+    where: {
+      varietyId: listing.varietyId,
+      status: "ACTIVE",
+      id: { not: listing.id },
+      user: { banned: false },
+    },
     include: { user: true, photos: { orderBy: { sortOrder: "asc" } } },
     orderBy: { createdAt: "desc" },
     take: 4,
@@ -204,12 +212,31 @@ export default async function ListingDetailPage({
           </Link>
 
           {user && !isOwner && (
-            <form action={reportListing} className="mt-3">
-              <input type="hidden" name="listingId" value={listing.id} />
-              <button className="text-xs text-gray-400 hover:text-red-600">
-                Report this listing
-              </button>
-            </form>
+            <div className="mt-3">
+              {reported && (
+                <p className="mb-2 text-xs text-green-700">
+                  Thanks — this listing has been reported.
+                </p>
+              )}
+              <details className="group">
+                <summary className="cursor-pointer text-xs text-gray-400 hover:text-red-600">
+                  Report this listing
+                </summary>
+                <form action={reportListing} className="mt-2 space-y-2">
+                  <input type="hidden" name="listingId" value={listing.id} />
+                  <textarea
+                    name="reason"
+                    required
+                    rows={3}
+                    placeholder="Why are you reporting this listing?"
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  />
+                  <button className="rounded-md bg-red-700 px-3 py-1.5 text-xs text-white">
+                    Submit report
+                  </button>
+                </form>
+              </details>
+            </div>
           )}
         </div>
       </div>
