@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Prisma, type MaterialType } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/get-user";
@@ -6,8 +7,16 @@ import { saveSearch } from "@/lib/actions/saved-search";
 import { buildSearchHref } from "@/lib/search";
 import { formatListingPrice, formatMaterialType } from "@/lib/price";
 import { searchVarieties } from "@/lib/fts";
+import { pageMetadata, siteTitle } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return pageMetadata(
+    siteTitle("Browse listings"),
+    "Buy and trade scion wood, rootstock, hardwood cuttings, rooted cuttings, seeds and divisions from verified nurseries and growers.",
+  );
+}
 
 const PAGE_SIZE = 20;
 

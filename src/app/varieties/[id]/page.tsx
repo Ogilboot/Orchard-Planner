@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/get-user";
@@ -7,8 +8,33 @@ import { sendMessage } from "@/lib/actions/messages";
 import { requestTransaction } from "@/lib/actions/transactions";
 import { compatiblePollinationGroups } from "@/lib/pollination";
 import { formatListingPrice, formatMaterialType } from "@/lib/price";
+import { pageMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const variety = await db.variety.findUnique({
+    where: { id },
+    select: { commonName: true, species: true, flavorNotes: true, hardinessZone: true },
+  });
+  if (!variety) return pageMetadata("Variety not found", "This variety could not be found.");
+  const description = [
+    variety.species,
+    variety.hardinessZone ? `Hardiness zone ${variety.hardinessZone}` : null,
+    variety.flavorNotes,
+  ]
+    .filter(Boolean)
+    .join(". ");
+  return pageMetadata(
+    `${variety.commonName} — variety details`,
+    description || `Facts, growers and listings for the ${variety.commonName} apple and fruit variety.`,
+  );
+}
 
 export default async function VarietyDetailPage({
   params,

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/get-user";
@@ -6,8 +7,31 @@ import { sendMessage } from "@/lib/actions/messages";
 import { requestTransaction } from "@/lib/actions/transactions";
 import { reportListing } from "@/lib/actions/reports";
 import { formatListingPrice, formatListingPriceShort, formatMaterialType, formatPounds } from "@/lib/price";
+import { pageMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const listing = await db.listing.findUnique({
+    where: { id },
+    include: { variety: { select: { commonName: true } }, user: { select: { name: true } } },
+  });
+  if (!listing) return pageMetadata("Listing not found", "This listing could not be found.");
+  const price = listing.tradeOnly
+    ? "trade only"
+    : listing.pricePence != null
+      ? formatPounds(listing.pricePence)
+      : "price on request";
+  return pageMetadata(
+    `${listing.variety.commonName} — ${listing.user.name ?? "seller"} on Orchard Planner`,
+    `Buy or trade ${listing.variety.commonName} (${price}) from ${listing.user.name ?? "a seller"} on Orchard Planner.`,
+  );
+}
 
 const statusLabels: Record<string, string> = {
   ACTIVE: "Active",

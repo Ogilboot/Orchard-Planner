@@ -1,8 +1,27 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { pageMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const rootstock = await db.rootstock.findUnique({
+    where: { id },
+    select: { name: true, species: true, vigour: true },
+  });
+  if (!rootstock) return pageMetadata("Rootstock not found", "This rootstock could not be found.");
+  return pageMetadata(
+    `${rootstock.name} — rootstock details`,
+    `${rootstock.species ?? "Fruit tree"} rootstock${rootstock.vigour ? `: ${rootstock.vigour} vigour.` : "."} Choose the right rootstock for your orchard.`,
+  );
+}
 
 export default async function RootstockDetailPage({
   params,

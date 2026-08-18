@@ -1,10 +1,19 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { searchUsers } from "@/lib/fts";
 import { buildSearchHref } from "@/lib/search";
+import { pageMetadata, siteTitle } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return pageMetadata(
+    siteTitle("Nurseries and growers"),
+    "Find UK nurseries and growers selling scion wood, rootstock, cuttings and seeds, with verified nurseries and grower reviews.",
+  );
+}
 
 const PAGE_SIZE = 24;
 

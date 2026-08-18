@@ -1,9 +1,19 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { searchVarieties } from "@/lib/fts";
 import { formatListingPriceShort, formatMaterialType } from "@/lib/price";
+import { pageMetadata, siteTitle } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return pageMetadata(
+    siteTitle("Search"),
+    "Search varieties, listings and rootstocks across the whole site.",
+  );
+
+}
 
 export default async function SearchPage({
   searchParams,

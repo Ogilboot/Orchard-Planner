@@ -1,9 +1,18 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/get-user";
 import { formatListingPrice, formatMaterialType } from "@/lib/price";
+import { pageMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return pageMetadata(
+    "Orchard Planner — find and trade propagable plants",
+    "Marketplace and variety database for scion wood, rootstock, cuttings, seeds and divisions, backed by a database of heritage and modern fruit cultivars.",
+  );
+}
 
 export default async function HomePage() {
   const user = await getCurrentUser();

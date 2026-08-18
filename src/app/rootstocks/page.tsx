@@ -1,7 +1,16 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { db } from "@/lib/db";
+import { pageMetadata, siteTitle } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return pageMetadata(
+    siteTitle("Rootstock database"),
+    "Reference rootstock for fruit trees: vigour, dwarfing class, chill hours and soil notes for MM106, M9, M27 and more.",
+  );
+}
 
 export default async function RootstocksPage() {
   const rootstocks = await db.rootstock.findMany({

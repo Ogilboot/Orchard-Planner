@@ -1,11 +1,20 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/get-user";
 import { buildSearchHref } from "@/lib/search";
 import { searchVarieties } from "@/lib/fts";
+import { pageMetadata, siteTitle } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return pageMetadata(
+    siteTitle("Variety database"),
+    "Search hundreds of fruit and tree varieties by species, hardiness zone, pollination group and chill hours.",
+  );
+}
 
 const PAGE_SIZE = 50;
 
